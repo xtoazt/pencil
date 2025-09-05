@@ -1,5 +1,49 @@
+// Pollinations API Configuration
 const POLLINATIONS_API_KEY = "G-fD2v__ugIDlQRC"
 const POLLINATIONS_BASE_URL = "https://pollinations.ai/api"
+
+// Available models on Pollinations
+export const AVAILABLE_MODELS = {
+  "gpt-4": "gpt-4",
+  "gpt-3.5-turbo": "gpt-3.5-turbo", 
+  "claude-3-opus": "claude-3-opus",
+  "claude-3-sonnet": "claude-3-sonnet",
+  "claude-3-haiku": "claude-3-haiku",
+  "gemini-pro": "gemini-pro",
+  "llama-2-70b": "llama-2-70b",
+  "mixtral-8x7b": "mixtral-8x7b",
+  "flux": "flux", // For image generation
+}
+
+// Get available models for UI display
+export function getAvailableModels() {
+  return Object.keys(AVAILABLE_MODELS).map(key => ({
+    id: key,
+    name: key.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    provider: getModelProvider(key),
+    category: getModelCategory(key),
+  }))
+}
+
+// Get model provider for display
+function getModelProvider(model: string): string {
+  if (model.startsWith('gpt')) return 'OpenAI'
+  if (model.startsWith('claude')) return 'Anthropic'
+  if (model.startsWith('gemini')) return 'Google'
+  if (model.startsWith('llama')) return 'Meta'
+  if (model.startsWith('mixtral')) return 'Mistral'
+  if (model === 'flux') return 'Black Forest Labs'
+  return 'Unknown'
+}
+
+// Get model category for display
+function getModelCategory(model: string): string {
+  if (model === 'flux') return 'Image Generation'
+  if (model.includes('opus') || model.includes('gpt-4')) return 'Advanced'
+  if (model.includes('sonnet') || model.includes('gpt-3.5')) return 'Standard'
+  if (model.includes('haiku')) return 'Fast'
+  return 'General'
+}
 
 export interface PollinationsResponse {
   id: string
@@ -38,9 +82,12 @@ export interface ModelUsage {
   confidence: number
 }
 
-// Standard chat completion
+// Standard chat completion using Pollinations
 export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
   try {
+    // Ensure model is available on Pollinations
+    const pollinationsModel = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS] || model
+    
     const response = await fetch(`${POLLINATIONS_BASE_URL}/chat`, {
       method: "POST",
       headers: {
@@ -49,8 +96,10 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
       },
       body: JSON.stringify({
         messages,
-        model,
+        model: pollinationsModel,
         stream: false,
+        temperature: 0.7,
+        max_tokens: 2000,
       }),
     })
 
@@ -59,23 +108,39 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
     }
 
     const data = await response.json()
-    data.usage = response.headers.get("X-Usage-Tokens")
-      ? Number.parseInt(response.headers.get("X-Usage-Tokens") || "0")
-      : 0
-    return data
+    
+    // Handle different response formats from Pollinations
+    if (data.choices && data.choices[0]) {
+      // Standard OpenAI format
+      return {
+        choices: [{ message: { content: data.choices[0].message.content } }],
+        usage: data.usage?.total_tokens || 0,
+        model: pollinationsModel,
+      }
+    } else if (data.response) {
+      // Direct response format
+      return {
+        choices: [{ message: { content: data.response } }],
+        usage: data.usage || 0,
+        model: pollinationsModel,
+      }
+    } else {
+      throw new Error("Unexpected response format from Pollinations")
+    }
   } catch (error) {
     console.error("Chat completion error:", error)
     throw error
   }
 }
 
-// Code generation
+// Code generation with specialized models
 export async function generateCode(prompt: string, language = "javascript") {
   try {
+    // Use Claude for code generation as it's often better at coding tasks
     const messages: ChatMessage[] = [
       {
         role: "system",
-        content: `You are an expert ${language} developer. Generate clean, well-documented code based on the user's request.`,
+        content: `You are an expert ${language} developer. Generate clean, well-documented code based on the user's request. Include comments explaining the logic and best practices.`,
       },
       {
         role: "user",
@@ -83,10 +148,15 @@ export async function generateCode(prompt: string, language = "javascript") {
       },
     ]
 
-    return await chatCompletion(messages, "gpt-4")
+    return await chatCompletion(messages, "claude-3-sonnet")
   } catch (error) {
     console.error("Code generation error:", error)
-    throw error
+    // Fallback to GPT-4 if Claude fails
+    try {
+      return await chatCompletion(messages, "gpt-4")
+    } catch (fallbackError) {
+      throw fallbackError
+    }
   }
 }
 
@@ -130,7 +200,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 1,
       description: "Analyzing prompt and determining optimal approach",
-      model: "GPT-4",
+      model: "Claude-3-Sonnet",
       duration: 0,
       status: "processing",
     })
@@ -156,7 +226,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       },
     ]
 
-    const analysis = await chatCompletion(analysisMessages, "gpt-4")
+    const analysis = await chatCompletion(analysisMessages, "claude-3-sonnet")
     const analysisDuration = Date.now() - analysisStart
 
     let analysisResult
@@ -179,7 +249,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     }
 
     modelUsage.push({
-      model: "GPT-4",
+      model: "Claude-3-Sonnet",
       purpose: "Prompt Analysis",
       tokens: analysis.usage || 0,
       confidence: analysisResult.confidence || 0.8,
@@ -190,7 +260,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 2,
       description: `Generating primary ${analysisResult.type} response`,
-      model: "GPT-4",
+      model: analysisResult.type === "code" ? "Claude-3-Sonnet" : "GPT-4",
       duration: 0,
       status: "processing",
     })
@@ -231,7 +301,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       processingSteps.push({
         step: 3,
         description: "Generating alternative perspective",
-        model: "GPT-4",
+        model: analysisResult.type === "code" ? "GPT-4" : "Claude-3-Sonnet",
         duration: 0,
         status: "processing",
       })
@@ -253,7 +323,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
         },
       ]
 
-      alternativeResult = await chatCompletion(altMessages, "gpt-4")
+      alternativeResult = await chatCompletion(altMessages, analysisResult.type === "code" ? "gpt-4" : "claude-3-sonnet")
       const altDuration = Date.now() - altStart
 
       processingSteps[2] = {
@@ -263,7 +333,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       }
 
       modelUsage.push({
-        model: "GPT-4",
+        model: analysisResult.type === "code" ? "GPT-4" : "Claude-3-Sonnet",
         purpose: "Alternative Perspective",
         tokens: alternativeResult.usage || 0,
         confidence: 0.85,
@@ -275,7 +345,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: processingSteps.length + 1,
       description: "Synthesizing enhanced final response",
-      model: "GPT-4",
+      model: "Claude-3-Sonnet",
       duration: 0,
       status: "processing",
     })
@@ -321,7 +391,7 @@ Please synthesize these into one enhanced response.`,
       },
     ]
 
-    const synthesis = await chatCompletion(synthesisMessages, "gpt-4")
+    const synthesis = await chatCompletion(synthesisMessages, "claude-3-sonnet")
     const synthDuration = Date.now() - synthStart
 
     processingSteps[processingSteps.length - 1] = {
@@ -331,7 +401,7 @@ Please synthesize these into one enhanced response.`,
     }
 
     modelUsage.push({
-      model: "GPT-4",
+      model: "Claude-3-Sonnet",
       purpose: "Response Synthesis",
       tokens: synthesis.usage || 0,
       confidence: 0.9,
