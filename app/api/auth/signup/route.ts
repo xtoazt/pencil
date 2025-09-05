@@ -7,10 +7,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json()
+    const { username, password, name } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json({ error: "Username and password required" }, { status: 400 })
+    if (!username || !password || !name) {
+      return NextResponse.json({ error: "Username, password, and name are required" }, { status: 400 })
     }
 
     const fakeEmail = `${username}@pencil.internal`
@@ -27,10 +27,9 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user with fake internal email
     const users = await sql`
       INSERT INTO neon_auth.users_sync (email, name, raw_json)
-      VALUES (${fakeEmail}, ${username}, ${JSON.stringify({ password: hashedPassword })})
+      VALUES (${fakeEmail}, ${name}, ${JSON.stringify({ password: hashedPassword, username: username })})
       RETURNING id, email, name
     `
 
@@ -39,12 +38,13 @@ export async function POST(request: NextRequest) {
     // Create user preferences
     await createUserPreferences(user.id)
 
-    const token = jwt.sign({ userId: user.id, username: user.name }, JWT_SECRET, { expiresIn: "7d" })
+    const token = jwt.sign({ userId: user.id, username: username, name: user.name }, JWT_SECRET, { expiresIn: "7d" })
 
     // Create response with user data
     const response = NextResponse.json({
       id: user.id,
-      username: user.name,
+      username: username,
+      name: user.name,
     })
 
     // Set HTTP-only cookie

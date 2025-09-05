@@ -13,8 +13,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<boolean>
-  signup: (email: string, password: string, name: string) => Promise<boolean>
+  login: (username: string, password: string) => Promise<boolean>
+  signup: (username: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   loading: boolean
 }
@@ -44,12 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       })
 
       if (response.ok) {
@@ -65,24 +65,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signup = async (email: string, password: string, name: string): Promise<boolean> => {
+  const signup = async (
+    username: string,
+    password: string,
+    name: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ username, password, name }),
       })
 
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
         router.push("/dashboard")
-        return true
+        return { success: true }
+      } else {
+        const errorData = await response.json()
+        return { success: false, error: errorData.error || "Signup failed" }
       }
-      return false
     } catch (error) {
       console.error("Signup failed:", error)
-      return false
+      return { success: false, error: "Network error occurred" }
     }
   }
 

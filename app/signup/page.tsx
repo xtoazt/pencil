@@ -10,6 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 
+interface AuthContextType {
+  user: any | null
+  login: (username: string, password: string) => Promise<boolean>
+  signup: (username: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => void
+  loading: boolean
+}
+
 export default function SignupPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -29,10 +37,9 @@ export default function SignupPage() {
       return
     }
 
-    const fakeEmail = `${username}@pencil.internal`
-    const success = await signup(fakeEmail, password, name)
-    if (!success) {
-      setError("Failed to create account. Username may already be taken.")
+    const result = await signup(username, password, name)
+    if (!result.success) {
+      setError(result.error || "Failed to create account")
     }
     setLoading(false)
   }
