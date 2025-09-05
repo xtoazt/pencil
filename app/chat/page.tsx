@@ -1,425 +1,571 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
+import { AppLayout } from "@/components/app-layout"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { EnhancedChatMessage } from "@/components/enhanced-chat-message"
-import {
-  MessageSquare,
-  Code,
-  ImageIcon,
-  Zap,
-  Send,
-  Loader2,
-  Settings,
-  Bot,
-  Maximize2,
-  AlignLeft,
-  Paperclip,
-  Mic,
-  Palette,
-} from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { MessageSquare, Send, Bot, User, Settings, Brain, Zap, Copy, Download, RefreshCw, Loader2, Cpu, Clock, Hash, Maximize2, Minimize2, Eye, EyeOff, Volume2, VolumeX, Mic, MicOff, Paperclip, Smile, MoreHorizontal } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
   timestamp: Date
-  mode: string
-  imageUrl?: string
-  originalCode?: string
-  reasoning?: string
-  type?: string
+  model?: string
+  tokens?: number
 }
 
-const modeConfig = {
-  chat: {
-    icon: MessageSquare,
-    title: "Smart Chat",
-    description: "Intelligent conversations with GPT-4",
-    color: "text-primary",
+const chatPresets = [
+  {
+    title: "General Chat",
+    description: "Casual conversation and Q&A",
+    prompt: "Hello! I'm here to help with any questions or conversations you'd like to have.",
+    model: "mistral-large-2411",
+    icon: "💬"
   },
-  code: {
-    icon: Code,
-    title: "Code Assistant",
-    description: "Generate and optimize code",
-    color: "text-primary",
+  {
+    title: "Creative Writing",
+    description: "Storytelling and creative content",
+    prompt: "I'm a creative writing assistant. I can help you with stories, poems, scripts, and other creative content.",
+    model: "roblox-rp",
+    icon: "✍️"
   },
-  image: {
-    icon: ImageIcon,
-    title: "Image Creator",
-    description: "Create images from text",
-    color: "text-primary",
+  {
+    title: "Technical Analysis",
+    description: "Deep technical discussions",
+    prompt: "I'm a technical analysis expert. I can help with complex technical problems, research, and analysis.",
+    model: "deepseek-r1",
+    icon: "🔬"
   },
-  super: {
-    icon: Zap,
-    title: "Super Mode",
-    description: "Enhanced multi-AI responses",
-    color: "text-secondary",
+  {
+    title: "Quick Answers",
+    description: "Fast, concise responses",
+    prompt: "I provide quick, accurate answers to your questions.",
+    model: "nova-fast",
+    icon: "⚡"
   },
-}
-
-const codeLanguages = [
-  "javascript",
-  "typescript",
-  "python",
-  "java",
-  "cpp",
-  "c",
-  "csharp",
-  "php",
-  "ruby",
-  "go",
-  "rust",
-  "swift",
-  "kotlin",
-]
-
-const responseStyles = [
-  { value: "balanced", label: "Balanced" },
-  { value: "creative", label: "Creative" },
-  { value: "precise", label: "Precise" },
-  { value: "detailed", label: "Detailed" },
-]
-
-const aiModels = [
-  { value: "gpt-4", label: "GPT-4" },
-  { value: "gpt-3.5", label: "GPT-3.5" },
-  { value: "claude", label: "Claude" },
-  { value: "gemini", label: "Gemini" },
+  {
+    title: "Learning Assistant",
+    description: "Educational explanations",
+    prompt: "I'm a learning assistant. I can explain complex topics in simple terms and help you understand new concepts.",
+    model: "mistral-medium",
+    icon: "🎓"
+  },
+  {
+    title: "Problem Solver",
+    description: "Step-by-step problem solving",
+    prompt: "I'm a problem-solving expert. I can break down complex problems into manageable steps and guide you through solutions.",
+    model: "mistral-large-2411",
+    icon: "🧩"
+  }
 ]
 
 export default function ChatPage() {
   const { user } = useAuth()
-  const searchParams = useSearchParams()
-  const mode = searchParams.get("mode") || "chat"
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript")
-  const [selectedModel, setSelectedModel] = useState("gpt-4")
-  const [responseStyle, setResponseStyle] = useState("balanced")
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [inputMessage, setInputMessage] = useState("")
+  const [selectedModel, setSelectedModel] = useState("mistral-large-2411")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [activeTab, setActiveTab] = useState("chat")
+  const [availableModels, setAvailableModels] = useState([])
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showModelInfo, setShowModelInfo] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
+  const [conversationHistory, setConversationHistory] = useState([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const config = modeConfig[mode as keyof typeof modeConfig] || modeConfig.chat
-  const IconComponent = config.icon
+  useEffect(() => {
+    setAvailableModels(getAvailableModels())
+  }, [])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    scrollToBottom()
   }, [messages])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || loading) return
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isGenerating) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-      mode,
+      content: inputMessage,
+      timestamp: new Date()
     }
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setLoading(true)
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage("")
+    setIsGenerating(true)
+    setIsTyping(true)
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          message: input.trim(),
-          mode,
-          language: selectedLanguage,
-          model: selectedModel,
-          style: responseStyle,
-          history: messages.slice(-10),
+          messages: [
+            ...messages.map(msg => ({ role: msg.role, content: msg.content })),
+            { role: "user", content: inputMessage }
+          ],
+          mode: "chat",
+          model: selectedModel
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("Failed to get response")
-      }
-
       const data = await response.json()
-
+      if (data.response) {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.content,
+          content: data.response,
         timestamp: new Date(),
-        mode,
-        imageUrl: data.imageUrl,
-        originalCode: data.originalCode,
-        reasoning: data.reasoning,
-        type: data.type,
+          model: selectedModel,
+          tokens: data.tokens
+        }
+        setMessages(prev => [...prev, assistantMessage])
       }
-
-      setMessages((prev) => [...prev, assistantMessage])
     } catch (error) {
-      console.error("Chat error:", error)
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-        timestamp: new Date(),
-        mode,
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      console.error("Error sending message:", error)
     } finally {
-      setLoading(false)
+      setIsGenerating(false)
+      setIsTyping(false)
     }
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  const clearChat = () => {
+    setMessages([])
+  }
+
+  const exportChat = () => {
+    const chatData = {
+      messages,
+      timestamp: new Date().toISOString(),
+      model: selectedModel
+    }
+    const blob = new Blob([JSON.stringify(chatData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chat-${Date.now()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content)
+  }
+
+  const getModelInfo = (modelId: string) => {
+    return availableModels.find((model: any) => model.id === modelId)
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50 animate-in slide-in-from-top duration-500">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xl font-bold transition-all duration-300 hover:scale-105 cursor-pointer">
-              <span className="bg-foreground text-background px-2 py-1 rounded transition-all duration-300 hover:bg-primary">
-                P
-              </span>
-              <span>E N C I L</span>
-              <span className="text-orange-500 transition-colors duration-300 hover:text-orange-400">A I</span>
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary flex items-center justify-center">
+              <MessageSquare className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground monospace">CHAT</h1>
+              <p className="text-muted-foreground">Intelligent conversation with AI</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-accent border-accent">
+              <Cpu className="h-3 w-3 mr-1" />
+              {availableModels.length} Models
+            </Badge>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="transition-all duration-300 hover:scale-110 hover:bg-accent active:scale-95"
+              onClick={() => setIsFullscreen(!isFullscreen)}
             >
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="transition-all duration-300 hover:scale-110 hover:bg-accent active:scale-95"
-            >
-              <Palette className="h-4 w-4" />
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex justify-center gap-2 mb-8 animate-in fade-in duration-700 delay-200">
-          {Object.entries(modeConfig).map(([key, config], index) => {
-            const IconComponent = config.icon
-            const isActive = mode === key
-            return (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="presets" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              Presets
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              History
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="chat" className="space-y-6">
+            <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-4'}`}>
+              {/* Chat Interface */}
+              <div className={`${isFullscreen ? 'col-span-1' : 'lg:col-span-3'}`}>
+                <Card className="card-minimal">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-5 w-5" />
+                        Conversation
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={clearChat}>
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={exportChat}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>
+                      {messages.length} messages • {selectedModel}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* Messages */}
+                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                        {messages.length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Start a conversation with AI</p>
+                          </div>
+                        ) : (
+                          messages.map((message) => (
+                            <div
+                              key={message.id}
+                              className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                            >
+                              <div className={`flex gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                  message.role === "user" 
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "bg-muted text-muted-foreground"
+                                }`}>
+                                  {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                                </div>
+                                <div className={`space-y-1 ${message.role === "user" ? "text-right" : "text-left"}`}>
+                                  <div className={`p-3 rounded-lg ${
+                                    message.role === "user"
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted text-muted-foreground"
+                                  }`}>
+                                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{message.timestamp.toLocaleTimeString()}</span>
+                                    {message.model && (
+                                      <>
+                                        <span>•</span>
+                                        <span>{message.model}</span>
+                                      </>
+                                    )}
+                                    {message.tokens && (
+                                      <>
+                                        <span>•</span>
+                                        <span>{message.tokens} tokens</span>
+                                      </>
+                                    )}
               <Button
-                key={key}
-                variant={isActive ? "default" : "outline"}
                 size="sm"
-                className={`gap-2 transition-all duration-300 hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-4 ${
-                  isActive ? "shadow-lg shadow-primary/20" : "hover:shadow-md hover:shadow-accent/20"
-                }`}
-                style={{ animationDelay: `${300 + index * 100}ms` }}
-                onClick={() => (window.location.href = `/chat?mode=${key}`)}
-              >
-                <IconComponent
-                  className={`h-4 w-4 transition-all duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`}
-                />
-                {config.title}
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0"
+                                      onClick={() => copyMessage(message.content)}
+                                    >
+                                      <Copy className="h-3 w-3" />
               </Button>
-            )
-          })}
+                                  </div>
         </div>
-
-        <div className="min-h-[60vh] mb-6">
-          {messages.length === 0 && (
-            <div className="text-center py-16 animate-in fade-in duration-1000 delay-500">
-              <div className="mb-8">
-                <div className="relative inline-block">
-                  <IconComponent
-                    className={`h-16 w-16 mx-auto mb-4 ${config.color} opacity-50 transition-all duration-700 hover:opacity-80 hover:scale-110`}
-                  />
-                  <div className="absolute inset-0 animate-pulse">
-                    <IconComponent className={`h-16 w-16 mx-auto mb-4 ${config.color} opacity-20`} />
                   </div>
                 </div>
-                <h2 className="text-2xl font-semibold mb-2 text-balance animate-in slide-in-from-bottom-4 duration-700 delay-700">
-                  {mode === "super" ? "What's on your mind?" : `Ready to ${config.title.toLowerCase()}?`}
-                </h2>
-                <p className="text-muted-foreground text-pretty max-w-md mx-auto animate-in slide-in-from-bottom-4 duration-700 delay-900">
-                  {config.description}
-                </p>
+                          ))
+                        )}
+                        {isTyping && (
+                          <div className="flex gap-3">
+                            <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
+                              <Bot className="h-4 w-4" />
+                            </div>
+                            <div className="bg-muted p-3 rounded-lg">
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              </div>
               </div>
             </div>
           )}
+                        <div ref={messagesEndRef} />
+                      </div>
 
-          <div className="space-y-6">
-            {messages.map((message, index) => (
-              <div
-                key={message.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-500"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <EnhancedChatMessage message={message} />
+                      {/* Input */}
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Textarea
+                            placeholder="Type your message..."
+                            value={inputMessage}
+                            onChange={(e) => setInputMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="min-h-[60px] resize-none"
+                            disabled={isGenerating}
+                          />
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={!inputMessage.trim() || isGenerating}
+                            className="button-minimal"
+                          >
+                            {isGenerating ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Press Enter to send, Shift+Enter for new line</span>
+                          <span>{inputMessage.length} characters</span>
               </div>
-            ))}
-
-            {loading && (
-              <div className="flex gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center animate-pulse">
-                  <Bot className="h-4 w-4 text-secondary-foreground" />
                 </div>
-                <Card className="transition-all duration-300 hover:shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="animate-pulse">
-                        {mode === "super" ? "Processing with multiple AI models..." : "Thinking..."}
-                      </span>
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </div>
         </div>
 
-        <div className="sticky bottom-4 animate-in slide-in-from-bottom duration-700 delay-300">
-          <Card className="shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4 mb-4 text-sm">
-                <div className="flex items-center gap-2 animate-in fade-in duration-500 delay-500">
-                  <Bot className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-foreground" />
+              {/* Sidebar */}
+              {!isFullscreen && (
+                <div className="lg:col-span-1 space-y-4">
+                  {/* Model Selection */}
+                  <Card className="card-minimal">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Cpu className="h-5 w-5" />
+                        AI Model
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                   <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger className="w-24 h-8 text-xs transition-all duration-300 hover:bg-accent">
+                        <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {aiModels.map((model) => (
-                        <SelectItem
-                          key={model.value}
-                          value={model.value}
-                          className="transition-colors duration-200 hover:bg-accent"
-                        >
-                          {model.label}
+                          {availableModels.map((model: any) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">{model.name}</span>
+                                <Badge variant="outline" className="text-xs">{model.provider}</Badge>
+                              </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                      {showModelInfo && (
+                        <div className="text-xs text-muted-foreground">
+                          <p>{getModelInfo(selectedModel)?.description}</p>
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowModelInfo(!showModelInfo)}
+                        className="w-full"
+                      >
+                        {showModelInfo ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                        {showModelInfo ? "Hide" : "Show"} Info
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-                <div className="flex items-center gap-2 animate-in fade-in duration-500 delay-600">
-                  <Settings className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-foreground" />
-                  <Select value={responseStyle} onValueChange={setResponseStyle}>
-                    <SelectTrigger className="w-28 h-8 text-xs transition-all duration-300 hover:bg-accent">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {responseStyles.map((style) => (
-                        <SelectItem
-                          key={style.value}
-                          value={style.value}
-                          className="transition-colors duration-200 hover:bg-accent"
-                        >
-                          {style.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Quick Actions */}
+                  <Card className="card-minimal">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        Quick Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <Button size="sm" variant="outline" className="w-full justify-start">
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Chat
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full justify-start">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Clear Chat
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-                {mode === "code" && (
-                  <div className="flex items-center gap-2 animate-in fade-in duration-500 delay-700">
-                    <Code className="h-4 w-4 text-muted-foreground transition-colors duration-300 hover:text-foreground" />
-                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                      <SelectTrigger className="w-28 h-8 text-xs transition-all duration-300 hover:bg-accent">
+                  {/* Chat Stats */}
+                  <Card className="card-minimal">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Hash className="h-5 w-5" />
+                        Stats
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Messages:</span>
+                        <span>{messages.length}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Characters:</span>
+                        <span>{messages.reduce((acc, msg) => acc + msg.content.length, 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Tokens:</span>
+                        <span>{messages.reduce((acc, msg) => acc + (msg.tokens || 0), 0)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="presets" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {chatPresets.map((preset, index) => (
+                <Card key={index} className="card-minimal cursor-pointer hover:border-foreground/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-2xl">{preset.icon}</span>
+                      {preset.title}
+                    </CardTitle>
+                    <CardDescription>{preset.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline" className="mb-3">
+                      {preset.model}
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      className="w-full button-outline-minimal"
+                      onClick={() => {
+                        setSelectedModel(preset.model)
+                        setInputMessage(preset.prompt)
+                        setActiveTab("chat")
+                      }}
+                    >
+                      Start Chat
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-6">
+            <Card className="card-minimal">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Chat History
+                </CardTitle>
+                <CardDescription>
+                  Your recent conversations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-muted-foreground text-sm">
+                    Chat history will appear here
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="card-minimal">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Chat Settings
+                </CardTitle>
+                <CardDescription>
+                  Customize your chat experience
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Model Settings</h3>
+                    <div className="space-y-2">
+                      <Label>Default Model</Label>
+                      <Select value={selectedModel} onValueChange={setSelectedModel}>
+                        <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {codeLanguages.map((lang) => (
-                          <SelectItem
-                            key={lang}
-                            value={lang}
-                            className="transition-colors duration-200 hover:bg-accent"
-                          >
-                            {lang}
+                          {availableModels.map((model: any) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
               </div>
 
-              <form onSubmit={handleSubmit} className="relative">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="What's on your mind?"
-                  disabled={loading}
-                  className={`pr-32 transition-all duration-300 focus:shadow-lg focus:shadow-primary/10 ${
-                    isExpanded ? "min-h-24" : "h-12"
-                  } resize-none`}
-                />
-
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 transition-all duration-300 hover:scale-110 hover:bg-accent active:scale-95"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                  >
-                    <Maximize2
-                      className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-45" : ""}`}
-                    />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 transition-all duration-300 hover:scale-110 hover:bg-accent active:scale-95"
-                  >
-                    <AlignLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 transition-all duration-300 hover:scale-110 hover:bg-accent active:scale-95"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 transition-all duration-300 hover:scale-110 hover:bg-accent hover:text-red-500 active:scale-95"
-                  >
-                    <Mic className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={loading || !input.trim()}
-                    size="sm"
-                    className="h-8 w-8 p-0 bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:scale-100"
-                  >
-                    <Send
-                      className={`h-4 w-4 transition-transform duration-300 ${loading ? "scale-0" : "scale-100"}`}
-                    />
-                    {loading && <Loader2 className="h-4 w-4 animate-spin absolute" />}
-                  </Button>
+                  <div className="space-y-4">
+                    <h3 className="font-medium">Interface</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Show model info</span>
+                        <Button size="sm" variant="outline">Enable</Button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Auto-scroll</span>
+                        <Button size="sm" variant="outline">Enable</Button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Typing indicators</span>
+                        <Button size="sm" variant="outline">Enable</Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </form>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
-      <div ref={messagesEndRef} />
-    </div>
+    </AppLayout>
   )
 }

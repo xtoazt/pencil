@@ -3,18 +3,26 @@ const LLM7_API_KEY = process.env.LLM7_API_KEY || "ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQ
 const LLM7_BASE_URL = "https://api.llm7.io/v1"
 const LLM7_CHAT_URL = "https://api.llm7.io/v1/chat/completions"
 
-// Available models on LLM7
+// Available models on LLM7 - Complete list with all models
 export const AVAILABLE_MODELS = {
   // GPT Models
   "gpt-4.1-nano": "gpt-4.1-nano-2025-04-14",
   "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
   "gpt-o4-mini": "gpt-o4-mini-2025-04-16",
   
-  // Mistral Models
-  "mistral-large": "mistral-large-2411",
+  // Mistral Models - Complete collection
+  "mistral-large-2411": "mistral-large-2411",
+  "mistral-large-2407": "mistral-large-2407",
+  "mistral-large-2402": "mistral-large-2402",
   "mistral-medium": "mistral-medium",
-  "mistral-small": "mistral-small-2503",
-  "codestral": "codestral-2501",
+  "mistral-small-2503": "mistral-small-2503",
+  "mistral-small-2501": "mistral-small-2501",
+  "mistral-small-2409": "mistral-small-2409",
+  "mistral-small-2402": "mistral-small-2402",
+  "mistral-small-3.1-24b": "mistral-small-3.1-24b-instruct-2503",
+  "mistral-saba": "mistral-saba-2502",
+  "codestral-2501": "codestral-2501",
+  "codestral-2405": "codestral-2405",
   "ministral-8b": "ministral-8b-2410",
   "ministral-3b": "ministral-3b-2410",
   "open-mixtral-8x7b": "open-mixtral-8x7b",
@@ -37,6 +45,54 @@ export const AVAILABLE_MODELS = {
   "pixtral-large": "pixtral-large-2411",
 }
 
+// Model categories for better organization
+export const MODEL_CATEGORIES = {
+  "GPT Models": ["gpt-4.1-nano", "gpt-4o-mini", "gpt-o4-mini"],
+  "Mistral Large": ["mistral-large-2411", "mistral-large-2407", "mistral-large-2402"],
+  "Mistral Medium": ["mistral-medium"],
+  "Mistral Small": ["mistral-small-2503", "mistral-small-2501", "mistral-small-2409", "mistral-small-2402", "mistral-small-3.1-24b"],
+  "Coding Models": ["codestral-2501", "codestral-2405", "qwen2.5-coder"],
+  "Efficient Models": ["ministral-8b", "ministral-3b", "nova-fast"],
+  "Open Source": ["open-mixtral-8x7b", "open-mixtral-8x22b", "open-mistral-7b", "open-mistral-nemo"],
+  "Specialized": ["deepseek-r1", "gemini", "roblox-rp", "mistral-saba"],
+  "Multimodal": ["bidara", "mirexa", "rtist", "pixtral-12b", "pixtral-large", "gpt-4o-mini", "gpt-4.1-nano"],
+}
+
+// Model capabilities
+export const MODEL_CAPABILITIES = {
+  "gpt-4.1-nano": { text: true, image: true, speed: "fast", quality: "high" },
+  "gpt-4o-mini": { text: true, image: true, speed: "fast", quality: "high" },
+  "gpt-o4-mini": { text: true, image: false, speed: "fast", quality: "high" },
+  "mistral-large-2411": { text: true, image: false, speed: "medium", quality: "very-high" },
+  "mistral-large-2407": { text: true, image: false, speed: "medium", quality: "very-high" },
+  "mistral-large-2402": { text: true, image: false, speed: "medium", quality: "very-high" },
+  "mistral-medium": { text: true, image: false, speed: "fast", quality: "high" },
+  "mistral-small-2503": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "mistral-small-2501": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "mistral-small-2409": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "mistral-small-2402": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "mistral-small-3.1-24b": { text: true, image: false, speed: "medium", quality: "high" },
+  "mistral-saba": { text: true, image: false, speed: "medium", quality: "high" },
+  "codestral-2501": { text: true, image: false, speed: "fast", quality: "high", specialty: "coding" },
+  "codestral-2405": { text: true, image: false, speed: "fast", quality: "high", specialty: "coding" },
+  "ministral-8b": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "ministral-3b": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "open-mixtral-8x7b": { text: true, image: false, speed: "medium", quality: "high" },
+  "open-mixtral-8x22b": { text: true, image: false, speed: "slow", quality: "very-high" },
+  "open-mistral-7b": { text: true, image: false, speed: "fast", quality: "good" },
+  "open-mistral-nemo": { text: true, image: false, speed: "fast", quality: "good" },
+  "deepseek-r1": { text: true, image: false, speed: "medium", quality: "very-high", specialty: "reasoning" },
+  "gemini": { text: true, image: false, speed: "fast", quality: "high" },
+  "qwen2.5-coder": { text: true, image: false, speed: "fast", quality: "high", specialty: "coding" },
+  "roblox-rp": { text: true, image: false, speed: "fast", quality: "good", specialty: "roleplay" },
+  "nova-fast": { text: true, image: false, speed: "very-fast", quality: "good" },
+  "bidara": { text: true, image: true, speed: "medium", quality: "high", specialty: "multimodal" },
+  "mirexa": { text: true, image: true, speed: "medium", quality: "high", specialty: "multimodal" },
+  "rtist": { text: true, image: false, speed: "medium", quality: "high", specialty: "art" },
+  "pixtral-12b": { text: true, image: true, speed: "medium", quality: "high", specialty: "multimodal" },
+  "pixtral-large": { text: true, image: true, speed: "slow", quality: "very-high", specialty: "multimodal" },
+}
+
 // Get available models for UI display
 export function getAvailableModels() {
   return Object.keys(AVAILABLE_MODELS).map(key => ({
@@ -44,27 +100,76 @@ export function getAvailableModels() {
     name: key.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     provider: getModelProvider(key),
     category: getModelCategory(key),
+    capabilities: MODEL_CAPABILITIES[key] || { text: true, image: false, speed: "medium", quality: "good" },
+    description: getModelDescription(key),
   }))
+}
+
+// Get models by category
+export function getModelsByCategory(category: string) {
+  return MODEL_CATEGORIES[category] || []
 }
 
 // Get model provider for display
 function getModelProvider(model: string): string {
-  if (model.startsWith('gpt')) return 'OpenAI'
-  if (model.startsWith('claude')) return 'Anthropic'
-  if (model.startsWith('gemini')) return 'Google'
-  if (model.startsWith('llama')) return 'Meta'
-  if (model.startsWith('mixtral')) return 'Mistral'
-  if (model === 'flux') return 'Black Forest Labs'
-  return 'Unknown'
+  if (model.includes("gpt")) return "OpenAI"
+  if (model.includes("mistral") || model.includes("codestral") || model.includes("ministral") || model.includes("mixtral")) return "Mistral"
+  if (model.includes("gemini")) return "Google"
+  if (model.includes("deepseek")) return "DeepSeek"
+  if (model.includes("qwen")) return "Alibaba"
+  if (model.includes("roblox")) return "Roblox"
+  if (model.includes("nova")) return "Amazon"
+  if (model.includes("bidara") || model.includes("mirexa") || model.includes("rtist") || model.includes("pixtral")) return "Azure"
+  return "LLM7"
 }
 
 // Get model category for display
 function getModelCategory(model: string): string {
-  if (model === 'flux') return 'Image Generation'
-  if (model.includes('opus') || model.includes('gpt-4')) return 'Advanced'
-  if (model.includes('sonnet') || model.includes('gpt-3.5')) return 'Standard'
-  if (model.includes('haiku')) return 'Fast'
-  return 'General'
+  for (const [category, models] of Object.entries(MODEL_CATEGORIES)) {
+    if (models.includes(model)) {
+      return category
+    }
+  }
+  return "Other"
+}
+
+// Get model description
+function getModelDescription(model: string): string {
+  const capabilities = MODEL_CAPABILITIES[model]
+  if (!capabilities) return "AI model for various tasks"
+  
+  let description = ""
+  if (capabilities.specialty) {
+    description += `${capabilities.specialty.charAt(0).toUpperCase() + capabilities.specialty.slice(1)} specialist. `
+  }
+  description += `${capabilities.quality} quality, ${capabilities.speed} speed`
+  if (capabilities.image) {
+    description += ", supports images"
+  }
+  return description
+}
+
+// Get recommended model for task
+export function getRecommendedModel(task: string): string {
+  const taskLower = task.toLowerCase()
+  
+  if (taskLower.includes("code") || taskLower.includes("programming") || taskLower.includes("debug")) {
+    return "codestral-2501"
+  }
+  if (taskLower.includes("image") || taskLower.includes("visual") || taskLower.includes("art")) {
+    return "pixtral-large"
+  }
+  if (taskLower.includes("reasoning") || taskLower.includes("analysis") || taskLower.includes("complex")) {
+    return "deepseek-r1"
+  }
+  if (taskLower.includes("fast") || taskLower.includes("quick")) {
+    return "nova-fast"
+  }
+  if (taskLower.includes("roleplay") || taskLower.includes("story")) {
+    return "roblox-rp"
+  }
+  
+  return "mistral-large-2411" // Default to high-quality model
 }
 
 export interface PollinationsResponse {

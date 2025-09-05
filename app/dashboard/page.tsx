@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
+import { getAvailableModels } from "@/lib/llm7"
 import {
   MessageSquare,
   Terminal,
@@ -36,10 +37,12 @@ export default function DashboardPage() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [recentActivity, setRecentActivity] = useState([])
+  const [availableModels, setAvailableModels] = useState([])
 
   useEffect(() => {
     fetchStats()
     fetchRecentActivity()
+    setAvailableModels(getAvailableModels())
   }, [])
 
   const fetchStats = async () => {
@@ -188,7 +191,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-foreground monospace">AI TOOLS</h2>
             <Badge variant="outline" className="text-accent border-accent">
               <Cpu className="h-3 w-3 mr-1" />
-              30+ Models Available
+              {availableModels.length} Models Available
             </Badge>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
