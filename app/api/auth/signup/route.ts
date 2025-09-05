@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { getSql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 
@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Generated fake email:", fakeEmail)
 
     console.log("[v0] Checking for existing username")
+    const sql = getSql()
     const existingUsers = await sql`
-      SELECT id FROM users 
-      WHERE username = ${username} 
+      SELECT id FROM users
+      WHERE username = ${username}
       AND deleted_at IS NULL
     `
     console.log("[v0] Existing users found:", existingUsers.length)

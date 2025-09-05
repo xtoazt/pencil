@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { getSql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 
@@ -13,9 +13,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Username and password required" }, { status: 400 })
     }
 
+    const sql = getSql()
     const users = await sql`
-      SELECT * FROM users 
-      WHERE username = ${username} 
+      SELECT * FROM users
+      WHERE username = ${username}
       AND deleted_at IS NULL
     `
 

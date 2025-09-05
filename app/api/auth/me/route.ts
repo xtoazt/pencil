@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/database"
+import { getSql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
+    const sql = getSql()
     const users = await sql`
-      SELECT id, email, name, username FROM users 
+      SELECT id, email, name, username FROM users
       WHERE id = ${decoded.userId} AND deleted_at IS NULL
     `
 

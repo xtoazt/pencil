@@ -1,13 +1,21 @@
 import { neon } from "@neondatabase/serverless"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
-}
+// Initialize database connection only when needed
+let sql: any = null
 
-export const sql = neon(process.env.DATABASE_URL)
+export function getSql() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is not set")
+  }
+  if (!sql) {
+    sql = neon(process.env.DATABASE_URL)
+  }
+  return sql
+}
 
 // User management functions
 export async function createUserPreferences(userId: string) {
+  const sql = getSql()
   return await sql`
     INSERT INTO user_preferences (user_id)
     VALUES (${userId})
@@ -17,6 +25,7 @@ export async function createUserPreferences(userId: string) {
 }
 
 export async function getUserPreferences(userId: string) {
+  const sql = getSql()
   const result = await sql`
     SELECT * FROM user_preferences WHERE user_id = ${userId}
   `
@@ -25,6 +34,7 @@ export async function getUserPreferences(userId: string) {
 
 // Conversation management functions
 export async function createConversation(userId: string, title: string, mode = "chat") {
+  const sql = getSql()
   const result = await sql`
     INSERT INTO conversations (user_id, title, mode)
     VALUES (${userId}, ${title}, ${mode})
@@ -34,6 +44,7 @@ export async function createConversation(userId: string, title: string, mode = "
 }
 
 export async function getUserConversations(userId: string) {
+  const sql = getSql()
   return await sql`
     SELECT * FROM conversations 
     WHERE user_id = ${userId}
@@ -42,6 +53,7 @@ export async function getUserConversations(userId: string) {
 }
 
 export async function getConversation(conversationId: string, userId: string) {
+  const sql = getSql()
   const result = await sql`
     SELECT * FROM conversations 
     WHERE id = ${conversationId} AND user_id = ${userId}
@@ -51,6 +63,7 @@ export async function getConversation(conversationId: string, userId: string) {
 
 // Message management functions
 export async function addMessage(conversationId: string, role: string, content: string, metadata: any = {}) {
+  const sql = getSql()
   const result = await sql`
     INSERT INTO messages (conversation_id, role, content, metadata)
     VALUES (${conversationId}, ${role}, ${content}, ${JSON.stringify(metadata)})
@@ -68,6 +81,7 @@ export async function addMessage(conversationId: string, role: string, content: 
 }
 
 export async function getConversationMessages(conversationId: string) {
+  const sql = getSql()
   return await sql`
     SELECT * FROM messages 
     WHERE conversation_id = ${conversationId}
@@ -77,6 +91,7 @@ export async function getConversationMessages(conversationId: string) {
 
 // Project management functions
 export async function createProject(userId: string, name: string, description?: string, framework = "react") {
+  const sql = getSql()
   const result = await sql`
     INSERT INTO projects (user_id, name, description, framework)
     VALUES (${userId}, ${name}, ${description}, ${framework})
@@ -86,6 +101,7 @@ export async function createProject(userId: string, name: string, description?: 
 }
 
 export async function getUserProjects(userId: string) {
+  const sql = getSql()
   return await sql`
     SELECT * FROM projects 
     WHERE user_id = ${userId}
@@ -94,6 +110,7 @@ export async function getUserProjects(userId: string) {
 }
 
 export async function updateProject(projectId: string, userId: string, updates: any) {
+  const sql = getSql()
   const { name, description, code_content, framework } = updates
   const result = await sql`
     UPDATE projects 
