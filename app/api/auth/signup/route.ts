@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
     const fakeEmail = `${username}@pencil.internal`
     console.log("[v0] Generated fake email:", fakeEmail)
 
-    // Check if username already exists
     console.log("[v0] Checking for existing username")
     const existingUsers = await sql`
-      SELECT id FROM neon_auth.users_sync WHERE name = ${username} AND deleted_at IS NULL
+      SELECT id FROM neon_auth.users_sync 
+      WHERE raw_json->>'username' = ${username} 
+      AND deleted_at IS NULL
     `
     console.log("[v0] Existing users found:", existingUsers.length)
 
@@ -38,17 +39,49 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Creating user in database")
     const users = await sql`
       INSERT INTO neon_auth.users_sync (email, name, raw_json)
-      VALUES (${fakeEmail}, ${name}, ${JSON.stringify({ password: hashedPassword, username: username })})
+      VALUES (
+        ${fakeEmail}, 
+        ${name}, 
+        ${JSON.stringify({
+          password: hashedPassword,
+          username: username,
+          displayName: name,
+        })}
+      )
       RETURNING id, email, name
     `
-    console.log("[v0] User created:", users[0])
 
+    if (!users || users.length === 0) {
+      console.log("[v0] Failed to create user")
+      return NextResponse.json({ error: "Failed to create user account" }, { status: 500 })
+    }
+
+    console.log("[v0] User created:", users[0])
     const user = users[0]
 
-    console.log("[v0] Skipping user preferences creation for now")
+    console.log("[v0] Creating user preferences")
+    try {
+      await sql`
+        INSERT INTO user_preferences (user_id, default_mode, theme, api_usage_limit)
+        VALUES (${user.id}, 'chat', 'light', 100)
+        ON CONFLICT (user_id) DO NOTHING
+      `
+      console.log("[v0] User preferences created")
+    } catch (prefError) {
+      console.log("[v0] User preferences creation failed, but continuing:", prefError.message)
+      // Don't fail the signup if preferences creation fails
+    }
 
     console.log("[v0] Generating JWT token")
-    const token = jwt.sign({ userId: user.id, username: username, name: user.name }, JWT_SECRET, { expiresIn: "7d" })
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        username: username,
+        name: user.name,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    )
 
     // Create response with user data
     const response = NextResponse.json({
@@ -69,6 +102,14 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error("[v0] Signup error details:", error)
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 })
+    console.error("[v0] Error stack:", error.stack)
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+        code: error.code || "UNKNOWN",
+      },
+      { status: 500 },
+    )
   }
 }
