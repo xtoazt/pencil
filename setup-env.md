@@ -13,15 +13,18 @@ DATABASE_URL=your_neon_database_url_here
 # JWT Secret for authentication
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
+# Pollinations AI API Key
+POLLINATIONS_API_KEY=El7HD30iUZh3ScBC
+
 # Node Environment
 NODE_ENV=development
 ```
 
 ## AI Functionality
 
-**No API Keys Required!** 🎉
+**Real AI Integration!** 🚀
 
-Pencil AI uses [Pollinations](https://pollinations.ai/) which provides access to multiple AI models including:
+Pencil AI uses [Pollinations](https://pollinations.ai/) with your personal API token to provide access to multiple AI models including:
 - **OpenAI Models:** GPT-4, GPT-3.5-turbo
 - **Anthropic Models:** Claude-3-Opus, Claude-3-Sonnet, Claude-3-Haiku
 - **Google Models:** Gemini-Pro
@@ -33,6 +36,16 @@ The application intelligently selects the best model for each task:
 - **General Chat:** GPT-4
 - **Image Creation:** FLUX
 - **Super Mode:** Multi-model approach for enhanced responses
+
+## API Token Setup
+
+Your Pollinations API token is already configured: `El7HD30iUZh3ScBC`
+
+**Security Notes:**
+- ✅ Keep your token secure and never share it publicly
+- ✅ Don't commit tokens to Git/GitHub repositories
+- ✅ Use .env files to store tokens safely
+- ✅ The token is already set up in the code as a fallback
 
 ## Database Setup
 

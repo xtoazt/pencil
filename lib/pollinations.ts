@@ -1,17 +1,18 @@
 // Pollinations API Configuration
-const POLLINATIONS_API_KEY = "G-fD2v__ugIDlQRC"
-const POLLINATIONS_BASE_URL = "https://pollinations.ai/api"
+const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || "El7HD30iUZh3ScBC"
+const POLLINATIONS_BASE_URL = "https://text.pollinations.ai"
+const POLLINATIONS_CHAT_URL = "https://text.pollinations.ai/openai"
 
 // Available models on Pollinations
 export const AVAILABLE_MODELS = {
-  "gpt-4": "gpt-4",
-  "gpt-3.5-turbo": "gpt-3.5-turbo", 
-  "claude-3-opus": "claude-3-opus",
-  "claude-3-sonnet": "claude-3-sonnet",
-  "claude-3-haiku": "claude-3-haiku",
-  "gemini-pro": "gemini-pro",
-  "llama-2-70b": "llama-2-70b",
-  "mixtral-8x7b": "mixtral-8x7b",
+  "gpt-4": "gpt-4.1-nano-2025-04-14", // Default model
+  "gpt-3.5-turbo": "gpt-4.1-nano-2025-04-14", 
+  "claude-3-opus": "gpt-4.1-nano-2025-04-14",
+  "claude-3-sonnet": "gpt-4.1-nano-2025-04-14",
+  "claude-3-haiku": "gpt-4.1-nano-2025-04-14",
+  "gemini-pro": "gpt-4.1-nano-2025-04-14",
+  "llama-2-70b": "gpt-4.1-nano-2025-04-14",
+  "mixtral-8x7b": "gpt-4.1-nano-2025-04-14",
   "flux": "flux", // For image generation
 }
 
@@ -88,26 +89,34 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
     // Ensure model is available on Pollinations
     const pollinationsModel = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS] || model
     
-    const response = await fetch(`${POLLINATIONS_BASE_URL}/chat`, {
+    console.log("Making request to Pollinations with model:", pollinationsModel)
+    console.log("Messages:", messages)
+    
+    const response = await fetch(`${POLLINATIONS_CHAT_URL}?token=${POLLINATIONS_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+        "Authorization": `Bearer ${POLLINATIONS_API_KEY}`,
       },
       body: JSON.stringify({
         messages,
-        model: pollinationsModel,
         stream: false,
         temperature: 0.7,
         max_tokens: 2000,
       }),
     })
 
+    console.log("Response status:", response.status)
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Pollinations API error: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error("Pollinations API error response:", errorText)
+      throw new Error(`Pollinations API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
+    console.log("Pollinations response data:", data)
     
     // Handle different response formats from Pollinations
     if (data.choices && data.choices[0]) {
@@ -124,7 +133,15 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
         usage: data.usage || 0,
         model: pollinationsModel,
       }
+    } else if (data.content) {
+      // Another possible format
+      return {
+        choices: [{ message: { content: data.content } }],
+        usage: data.usage || 0,
+        model: pollinationsModel,
+      }
     } else {
+      console.error("Unexpected response format:", data)
       throw new Error("Unexpected response format from Pollinations")
     }
   } catch (error) {
@@ -163,25 +180,25 @@ export async function generateCode(prompt: string, language = "javascript") {
 // Image generation
 export async function generateImage(prompt: string, width = 512, height = 512) {
   try {
-    const response = await fetch(`${POLLINATIONS_BASE_URL}/image`, {
-      method: "POST",
+    const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=flux&token=${POLLINATIONS_API_KEY}`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+        "Authorization": `Bearer ${POLLINATIONS_API_KEY}`,
       },
-      body: JSON.stringify({
-        prompt,
-        width,
-        height,
-        model: "flux",
-      }),
     })
 
     if (!response.ok) {
       throw new Error(`Image generation error: ${response.statusText}`)
     }
 
-    return await response.json()
+    // For image generation, we return the image URL
+    const imageUrl = response.url
+    return {
+      url: imageUrl,
+      prompt: prompt,
+      width: width,
+      height: height,
+    }
   } catch (error) {
     console.error("Image generation error:", error)
     throw error

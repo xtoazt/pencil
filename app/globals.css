@@ -4,91 +4,88 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Pencil AI - Unique Design System */
-  /* Primary Brand Colors - Deep Purple to Electric Blue Gradient */
-  --primary: oklch(0.45 0.15 280); /* Deep purple */
-  --primary-foreground: oklch(0.98 0 0); /* Near white */
-  --primary-light: oklch(0.65 0.12 280); /* Lighter purple */
+  /* Modern Professional Design System */
+  /* Primary Colors - Clean Blue */
+  --primary: oklch(0.5 0.15 240); /* Professional blue */
+  --primary-foreground: oklch(0.98 0 0); /* White text */
   
-  /* Secondary Colors - Electric Blue */
-  --secondary: oklch(0.55 0.18 240); /* Electric blue */
-  --secondary-foreground: oklch(0.98 0 0); /* Near white */
-  --secondary-light: oklch(0.75 0.15 240); /* Lighter blue */
+  /* Secondary Colors - Subtle Gray */
+  --secondary: oklch(0.96 0 0); /* Light gray */
+  --secondary-foreground: oklch(0.15 0 0); /* Dark text */
   
-  /* Accent Colors - Neon Green */
-  --accent: oklch(0.6 0.2 140); /* Neon green */
-  --accent-foreground: oklch(0.05 0 0); /* Near black */
-  --accent-light: oklch(0.8 0.15 140); /* Lighter green */
+  /* Accent Colors - Success Green */
+  --accent: oklch(0.6 0.12 140); /* Success green */
+  --accent-foreground: oklch(0.98 0 0); /* White text */
   
-  /* Background System - Dark theme inspired */
-  --background: oklch(0.08 0.02 280); /* Very dark purple-tinted */
-  --foreground: oklch(0.95 0.02 280); /* Near white with slight purple tint */
-  --card: oklch(0.12 0.03 280); /* Dark purple-tinted cards */
-  --card-foreground: oklch(0.9 0.02 280); /* Light text on cards */
+  /* Background System - Clean and minimal */
+  --background: oklch(0.99 0 0); /* Pure white */
+  --foreground: oklch(0.1 0 0); /* Near black */
+  --card: oklch(1 0 0); /* White cards */
+  --card-foreground: oklch(0.1 0 0); /* Dark text on cards */
   
   /* Interactive Elements */
-  --popover: oklch(0.1 0.03 280); /* Dark popover */
-  --popover-foreground: oklch(0.9 0.02 280); /* Light popover text */
-  --muted: oklch(0.15 0.03 280); /* Muted dark */
-  --muted-foreground: oklch(0.6 0.02 280); /* Muted text */
-  --border: oklch(0.2 0.05 280); /* Subtle purple border */
-  --input: oklch(0.1 0.03 280); /* Dark input */
-  --ring: oklch(0.55 0.18 240); /* Electric blue focus ring */
+  --popover: oklch(1 0 0); /* White popover */
+  --popover-foreground: oklch(0.1 0 0); /* Dark popover text */
+  --muted: oklch(0.96 0 0); /* Light muted */
+  --muted-foreground: oklch(0.45 0 0); /* Medium gray text */
+  --border: oklch(0.9 0 0); /* Light border */
+  --input: oklch(1 0 0); /* White input */
+  --ring: oklch(0.5 0.15 240); /* Blue focus ring */
   
   /* Status Colors */
-  --destructive: oklch(0.6 0.2 20); /* Red-orange */
+  --destructive: oklch(0.55 0.2 20); /* Red */
   --destructive-foreground: oklch(0.98 0 0); /* White on destructive */
   
-  /* Chart Colors - Gradient palette */
-  --chart-1: oklch(0.45 0.15 280); /* Primary purple */
-  --chart-2: oklch(0.55 0.18 240); /* Secondary blue */
-  --chart-3: oklch(0.6 0.2 140); /* Accent green */
-  --chart-4: oklch(0.65 0.15 320); /* Pink */
-  --chart-5: oklch(0.7 0.18 200); /* Cyan */
+  /* Chart Colors - Professional palette */
+  --chart-1: oklch(0.5 0.15 240); /* Blue */
+  --chart-2: oklch(0.6 0.12 140); /* Green */
+  --chart-3: oklch(0.65 0.15 320); /* Purple */
+  --chart-4: oklch(0.7 0.18 200); /* Cyan */
+  --chart-5: oklch(0.6 0.2 20); /* Orange */
   
-  /* Border radius - More rounded for modern look */
-  --radius: 0.75rem;
+  /* Border radius - Subtle rounding */
+  --radius: 0.5rem;
   
-  /* Sidebar - Dark with accent */
-  --sidebar: oklch(0.06 0.02 280); /* Very dark sidebar */
-  --sidebar-foreground: oklch(0.9 0.02 280); /* Light sidebar text */
-  --sidebar-primary: oklch(0.55 0.18 240); /* Electric blue sidebar primary */
-  --sidebar-primary-foreground: oklch(0.05 0 0); /* Dark text on sidebar primary */
-  --sidebar-accent: oklch(0.15 0.05 280); /* Dark sidebar accent */
-  --sidebar-accent-foreground: oklch(0.8 0.02 280); /* Light text on sidebar accent */
-  --sidebar-border: oklch(0.2 0.05 280); /* Purple sidebar border */
-  --sidebar-ring: oklch(0.55 0.18 240); /* Blue sidebar focus ring */
+  /* Sidebar - Clean and minimal */
+  --sidebar: oklch(0.98 0 0); /* Very light gray sidebar */
+  --sidebar-foreground: oklch(0.15 0 0); /* Dark sidebar text */
+  --sidebar-primary: oklch(0.5 0.15 240); /* Blue sidebar primary */
+  --sidebar-primary-foreground: oklch(0.98 0 0); /* White text on sidebar primary */
+  --sidebar-accent: oklch(0.94 0 0); /* Light sidebar accent */
+  --sidebar-accent-foreground: oklch(0.15 0 0); /* Dark text on sidebar accent */
+  --sidebar-border: oklch(0.9 0 0); /* Light sidebar border */
+  --sidebar-ring: oklch(0.5 0.15 240); /* Blue sidebar focus ring */
 }
 
 .dark {
-  /* Enhanced dark mode with more vibrant colors */
-  --background: oklch(0.03 0.01 280); /* Even darker purple-tinted */
-  --foreground: oklch(0.98 0.01 280); /* Brighter white with purple tint */
-  --card: oklch(0.08 0.02 280); /* Darker purple-tinted cards */
-  --card-foreground: oklch(0.95 0.01 280); /* Brighter text on cards */
+  /* Professional dark mode */
+  --background: oklch(0.05 0 0); /* Near black */
+  --foreground: oklch(0.95 0 0); /* Near white */
+  --card: oklch(0.08 0 0); /* Dark cards */
+  --card-foreground: oklch(0.95 0 0); /* Light text on cards */
   
-  /* Enhanced interactive elements */
-  --popover: oklch(0.06 0.02 280); /* Darker popover */
-  --popover-foreground: oklch(0.95 0.01 280); /* Brighter popover text */
-  --muted: oklch(0.12 0.02 280); /* Darker muted */
-  --muted-foreground: oklch(0.65 0.01 280); /* Brighter muted text */
-  --border: oklch(0.15 0.03 280); /* More visible purple border */
-  --input: oklch(0.06 0.02 280); /* Darker input */
-  --ring: oklch(0.6 0.2 240); /* Brighter blue focus ring */
+  /* Interactive elements */
+  --popover: oklch(0.08 0 0); /* Dark popover */
+  --popover-foreground: oklch(0.95 0 0); /* Light popover text */
+  --muted: oklch(0.12 0 0); /* Dark muted */
+  --muted-foreground: oklch(0.6 0 0); /* Medium gray text */
+  --border: oklch(0.15 0 0); /* Dark border */
+  --input: oklch(0.08 0 0); /* Dark input */
+  --ring: oklch(0.5 0.15 240); /* Blue focus ring */
   
-  /* Enhanced status colors */
-  --destructive: oklch(0.65 0.25 20); /* Brighter red-orange */
-  --destructive-foreground: oklch(0.98 0 0); /* White on destructive */
+  /* Status colors */
+  --destructive: oklch(0.6 0.2 20); /* Red */
+  --destructive-foreground: oklch(0.95 0 0); /* Light text on destructive */
   
-  /* Enhanced sidebar */
-  --sidebar: oklch(0.04 0.01 280); /* Even darker sidebar */
-  --sidebar-foreground: oklch(0.95 0.01 280); /* Brighter sidebar text */
-  --sidebar-primary: oklch(0.6 0.2 240); /* Brighter blue sidebar primary */
-  --sidebar-primary-foreground: oklch(0.05 0 0); /* Dark text on sidebar primary */
-  --sidebar-accent: oklch(0.12 0.03 280); /* Darker sidebar accent */
-  --sidebar-accent-foreground: oklch(0.85 0.01 280); /* Brighter text on sidebar accent */
-  --sidebar-border: oklch(0.15 0.03 280); /* More visible purple sidebar border */
-  --sidebar-ring: oklch(0.6 0.2 240); /* Brighter blue sidebar focus ring */
+  /* Sidebar */
+  --sidebar: oklch(0.06 0 0); /* Dark sidebar */
+  --sidebar-foreground: oklch(0.95 0 0); /* Light sidebar text */
+  --sidebar-primary: oklch(0.5 0.15 240); /* Blue sidebar primary */
+  --sidebar-primary-foreground: oklch(0.95 0 0); /* Light text on sidebar primary */
+  --sidebar-accent: oklch(0.12 0 0); /* Dark sidebar accent */
+  --sidebar-accent-foreground: oklch(0.85 0 0); /* Light text on sidebar accent */
+  --sidebar-border: oklch(0.15 0 0); /* Dark sidebar border */
+  --sidebar-ring: oklch(0.5 0.15 240); /* Blue sidebar focus ring */
 }
 
 @theme inline {
@@ -138,102 +135,46 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: 
-      radial-gradient(circle at 20% 80%, oklch(0.45 0.15 280 / 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, oklch(0.55 0.18 240 / 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, oklch(0.6 0.2 140 / 0.05) 0%, transparent 50%);
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Custom Pencil AI Components */
+/* Professional Components */
 @layer components {
-  .pencil-gradient {
+  .card-modern {
+    @apply bg-card border border-border/50 shadow-sm;
+    transition: all 0.2s ease;
+  }
+  
+  .card-modern:hover {
+    @apply shadow-md border-border;
+  }
+  
+  .button-modern {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+    transition: all 0.2s ease;
+  }
+  
+  .button-modern:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0.5 0.15 240 / 0.3);
+  }
+  
+  .text-gradient {
     background: linear-gradient(135deg, 
-      oklch(0.45 0.15 280) 0%, 
-      oklch(0.55 0.18 240) 50%, 
-      oklch(0.6 0.2 140) 100%);
-  }
-  
-  .pencil-glow {
-    box-shadow: 
-      0 0 20px oklch(0.45 0.15 280 / 0.3),
-      0 0 40px oklch(0.55 0.18 240 / 0.2),
-      0 0 60px oklch(0.6 0.2 140 / 0.1);
-  }
-  
-  .pencil-card {
-    @apply bg-card/50 backdrop-blur-sm border border-border/50;
-    background: linear-gradient(135deg, 
-      oklch(0.12 0.03 280 / 0.8) 0%, 
-      oklch(0.08 0.02 280 / 0.9) 100%);
-  }
-  
-  .pencil-button {
-    @apply relative overflow-hidden;
-    background: linear-gradient(135deg, 
-      oklch(0.45 0.15 280) 0%, 
-      oklch(0.55 0.18 240) 100%);
-    transition: all 0.3s ease;
-  }
-  
-  .pencil-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px oklch(0.45 0.15 280 / 0.4);
-  }
-  
-  .pencil-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-      transparent, 
-      oklch(1 1 1 / 0.2), 
-      transparent);
-    transition: left 0.5s;
-  }
-  
-  .pencil-button:hover::before {
-    left: 100%;
-  }
-  
-  .pencil-text-gradient {
-    background: linear-gradient(135deg, 
-      oklch(0.95 0.02 280) 0%, 
-      oklch(0.8 0.05 240) 50%, 
-      oklch(0.7 0.08 140) 100%);
+      oklch(0.1 0 0) 0%, 
+      oklch(0.3 0 0) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
-  .pencil-pulse {
-    animation: pencil-pulse 2s infinite;
-  }
-  
-  @keyframes pencil-pulse {
-    0%, 100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.8;
-      transform: scale(1.05);
-    }
-  }
-  
-  .pencil-float {
-    animation: pencil-float 3s ease-in-out infinite;
-  }
-  
-  @keyframes pencil-float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
+  .dark .text-gradient {
+    background: linear-gradient(135deg, 
+      oklch(0.95 0 0) 0%, 
+      oklch(0.7 0 0) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

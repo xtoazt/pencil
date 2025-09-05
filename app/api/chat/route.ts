@@ -93,6 +93,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No response generated" }, { status: 500 })
   } catch (error) {
     console.error("Chat API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
+    return NextResponse.json({ 
+      error: "AI service temporarily unavailable", 
+      details: error.message,
+      code: error.code || "UNKNOWN"
+    }, { status: 500 })
   }
 }
