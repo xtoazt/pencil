@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import jwt from "jsonwebtoken"
+import { jwtVerify } from "jose"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-change-in-production")
 
 // Protected routes that require authentication
 const protectedRoutes = ["/dashboard", "/chat", "/projects", "/history", "/settings"]
@@ -10,7 +10,7 @@ const protectedRoutes = ["/dashboard", "/chat", "/projects", "/history", "/setti
 // Public routes that redirect to dashboard if authenticated
 const publicRoutes = ["/login", "/signup"]
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const token = request.cookies.get("auth-token")?.value
@@ -19,8 +19,8 @@ export function middleware(request: NextRequest) {
   let isAuthenticated = false
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string }
-      isAuthenticated = !!decoded
+      const { payload } = await jwtVerify(token, JWT_SECRET)
+      isAuthenticated = !!payload.userId
     } catch (error) {
       // If token is invalid, clear it
       const response = NextResponse.next()

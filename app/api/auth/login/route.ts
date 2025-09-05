@@ -7,15 +7,14 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { username, password } = await request.json()
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 })
+    if (!username || !password) {
+      return NextResponse.json({ error: "Username and password required" }, { status: 400 })
     }
 
-    // Find user in database
     const users = await sql`
-      SELECT * FROM neon_auth.users_sync WHERE email = ${email} AND deleted_at IS NULL
+      SELECT * FROM neon_auth.users_sync WHERE name = ${username} AND deleted_at IS NULL
     `
 
     if (users.length === 0) {
@@ -24,7 +23,6 @@ export async function POST(request: NextRequest) {
 
     const user = users[0]
 
-    // Check password (assuming it's stored in raw_json.password)
     const userData = user.raw_json as any
     const isValidPassword = await bcrypt.compare(password, userData.password || "")
 
@@ -32,16 +30,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" })
+    const token = jwt.sign({ userId: user.id, username: user.name }, JWT_SECRET, { expiresIn: "7d" })
 
-    // Create response with user data
     const response = NextResponse.json({
       id: user.id,
-      email: user.email,
-      name: user.name,
+      username: user.name,
     })
 
-    // Set HTTP-only cookie
     response.cookies.set("auth-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

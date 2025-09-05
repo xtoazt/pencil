@@ -7,28 +7,30 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json()
+    const { username, password } = await request.json()
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: "Email, password, and name required" }, { status: 400 })
+    if (!username || !password) {
+      return NextResponse.json({ error: "Username and password required" }, { status: 400 })
     }
 
-    // Check if user already exists
+    const fakeEmail = `${username}@pencil.internal`
+
+    // Check if username already exists
     const existingUsers = await sql`
-      SELECT id FROM neon_auth.users_sync WHERE email = ${email} AND deleted_at IS NULL
+      SELECT id FROM neon_auth.users_sync WHERE name = ${username} AND deleted_at IS NULL
     `
 
     if (existingUsers.length > 0) {
-      return NextResponse.json({ error: "User already exists" }, { status: 409 })
+      return NextResponse.json({ error: "Username already taken" }, { status: 409 })
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
+    // Create user with fake internal email
     const users = await sql`
       INSERT INTO neon_auth.users_sync (email, name, raw_json)
-      VALUES (${email}, ${name}, ${JSON.stringify({ password: hashedPassword })})
+      VALUES (${fakeEmail}, ${username}, ${JSON.stringify({ password: hashedPassword })})
       RETURNING id, email, name
     `
 
@@ -37,13 +39,12 @@ export async function POST(request: NextRequest) {
     // Create user preferences
     await createUserPreferences(user.id)
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" })
+    const token = jwt.sign({ userId: user.id, username: user.name }, JWT_SECRET, { expiresIn: "7d" })
 
     // Create response with user data
     const response = NextResponse.json({
       id: user.id,
-      email: user.email,
-      name: user.name,
+      username: user.name,
     })
 
     // Set HTTP-only cookie
