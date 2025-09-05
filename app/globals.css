@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(1 0 0); /* White background */
+  --foreground: oklch(0.4 0 0); /* Slate gray text */
+  --card: oklch(0.98 0.02 195); /* Light cyan card background */
+  --card-foreground: oklch(0.35 0 0); /* Dark gray card text */
+  --popover: oklch(1 0 0); /* White popover */
+  --popover-foreground: oklch(0.35 0 0); /* Dark gray popover text */
+  --primary: oklch(0.35 0.08 200); /* Cyan-800 primary */
+  --primary-foreground: oklch(1 0 0); /* White text on primary */
+  --secondary: oklch(0.65 0.15 65); /* Amber-600 secondary */
+  --secondary-foreground: oklch(1 0 0); /* White text on secondary */
+  --muted: oklch(0.97 0.01 195); /* Very light cyan muted */
+  --muted-foreground: oklch(0.5 0 0); /* Medium gray muted text */
+  --accent: oklch(0.65 0.15 65); /* Amber-600 accent */
+  --accent-foreground: oklch(1 0 0); /* White text on accent */
+  --destructive: oklch(0.55 0.25 25); /* Red destructive */
+  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
+  --border: oklch(0.9 0.01 195); /* Light cyan border */
+  --input: oklch(0.98 0.01 195); /* Light cyan input background */
+  --ring: oklch(0.65 0.15 65); /* Amber focus ring */
+  --chart-1: oklch(0.35 0.08 200); /* Cyan chart color */
+  --chart-2: oklch(0.65 0.15 65); /* Amber chart color */
+  --chart-3: oklch(0.97 0.01 195); /* Light cyan chart color */
+  --chart-4: oklch(0.55 0.25 25); /* Red chart color */
+  --chart-5: oklch(0.98 0.02 195); /* Very light cyan chart color */
+  --radius: 0.5rem;
+  --sidebar: oklch(1 0 0); /* White sidebar */
+  --sidebar-foreground: oklch(0.4 0 0); /* Slate gray sidebar text */
+  --sidebar-primary: oklch(0.35 0.08 200); /* Cyan sidebar primary */
+  --sidebar-primary-foreground: oklch(1 0 0); /* White text on sidebar primary */
+  --sidebar-accent: oklch(0.65 0.15 65); /* Amber sidebar accent */
+  --sidebar-accent-foreground: oklch(1 0 0); /* White text on sidebar accent */
+  --sidebar-border: oklch(0.9 0.01 195); /* Light cyan sidebar border */
+  --sidebar-ring: oklch(0.65 0.15 65); /* Amber sidebar focus ring */
+}
+
+.dark {
+  --background: oklch(0.1 0 0); /* Very dark background */
+  --foreground: oklch(0.95 0 0); /* Light text */
+  --card: oklch(0.15 0.02 200); /* Dark cyan card */
+  --card-foreground: oklch(0.95 0 0); /* Light card text */
+  --popover: oklch(0.1 0 0); /* Dark popover */
+  --popover-foreground: oklch(0.95 0 0); /* Light popover text */
+  --primary: oklch(0.7 0.12 200); /* Lighter cyan primary for dark mode */
+  --primary-foreground: oklch(0.1 0 0); /* Dark text on primary */
+  --secondary: oklch(0.75 0.18 65); /* Lighter amber secondary */
+  --secondary-foreground: oklch(0.1 0 0); /* Dark text on secondary */
+  --muted: oklch(0.2 0.02 200); /* Dark cyan muted */
+  --muted-foreground: oklch(0.7 0 0); /* Light gray muted text */
+  --accent: oklch(0.75 0.18 65); /* Lighter amber accent */
+  --accent-foreground: oklch(0.1 0 0); /* Dark text on accent */
+  --destructive: oklch(0.6 0.3 25); /* Lighter red destructive */
+  --destructive-foreground: oklch(0.95 0 0); /* Light text on destructive */
+  --border: oklch(0.25 0.02 200); /* Dark cyan border */
+  --input: oklch(0.15 0.02 200); /* Dark cyan input */
+  --ring: oklch(0.75 0.18 65); /* Amber focus ring */
+  --chart-1: oklch(0.7 0.12 200); /* Light cyan chart */
+  --chart-2: oklch(0.75 0.18 65); /* Amber chart */
+  --chart-3: oklch(0.2 0.02 200); /* Dark cyan chart */
+  --chart-4: oklch(0.6 0.3 25); /* Red chart */
+  --chart-5: oklch(0.15 0.02 200); /* Very dark cyan chart */
+  --sidebar: oklch(0.12 0.01 200); /* Dark cyan sidebar */
+  --sidebar-foreground: oklch(0.95 0 0); /* Light sidebar text */
+  --sidebar-primary: oklch(0.7 0.12 200); /* Light cyan sidebar primary */
+  --sidebar-primary-foreground: oklch(0.1 0 0); /* Dark text on sidebar primary */
+  --sidebar-accent: oklch(0.75 0.18 65); /* Amber sidebar accent */
+  --sidebar-accent-foreground: oklch(0.1 0 0); /* Dark text on sidebar accent */
+  --sidebar-border: oklch(0.25 0.02 200); /* Dark cyan sidebar border */
+  --sidebar-ring: oklch(0.75 0.18 65); /* Amber sidebar focus ring */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
