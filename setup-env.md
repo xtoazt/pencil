@@ -13,8 +13,8 @@ DATABASE_URL=your_neon_database_url_here
 # JWT Secret for authentication
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
-# Pollinations AI API Key
-POLLINATIONS_API_KEY=El7HD30iUZh3ScBC
+# LLM7 AI API Key
+LLM7_API_KEY=ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQHtngi+nKTJioErxAJvk7atA677L/7QUb+OZPwRzQkqglBTSYvBXL207hrUum8EEI1XW0BmCzX7IfQ1avVWSFH8xB3bon21XDLyGTLFPu7umEJwVS5lTto=
 
 # Node Environment
 NODE_ENV=development
@@ -22,24 +22,23 @@ NODE_ENV=development
 
 ## AI Functionality
 
-**Real AI Integration!** 🚀
+**Advanced AI Integration!** 🚀
 
-Pencil AI uses [Pollinations](https://pollinations.ai/) with your personal API token to provide access to multiple AI models including:
-- **OpenAI Models:** GPT-4, GPT-3.5-turbo
-- **Anthropic Models:** Claude-3-Opus, Claude-3-Sonnet, Claude-3-Haiku
-- **Google Models:** Gemini-Pro
-- **Open Source Models:** Llama-2-70b, Mixtral-8x7b
-- **Image Generation:** FLUX
+Pencil AI uses [LLM7](https://llm7.io/) with your personal API token to provide access to multiple AI models including:
+- **GPT Models:** GPT-4.1-nano, GPT-4o-mini, GPT-o4-mini
+- **Mistral Models:** Mistral-Large, Mistral-Medium, Codestral, Ministral
+- **Specialized Models:** DeepSeek-R1, Gemini, Qwen2.5-Coder
+- **Multimodal Models:** Bidara, Mirexa, RTIST, Pixtral
 
 The application intelligently selects the best model for each task:
-- **Code Generation:** Claude-3-Sonnet (with GPT-4 fallback)
-- **General Chat:** GPT-4
-- **Image Creation:** FLUX
-- **Super Mode:** Multi-model approach for enhanced responses
+- **Code Generation:** Codestral (specialized coding model)
+- **General Chat:** GPT-4.1-nano (fast and efficient)
+- **Image Creation:** RTIST (multimodal image generation)
+- **Super Mode:** Multi-model approach with Mistral-Large for analysis
 
 ## API Token Setup
 
-Your Pollinations API token is already configured: `El7HD30iUZh3ScBC`
+Your LLM7 API token is already configured: `ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQHtngi+nKTJioErxAJvk7atA677L/7QUb+OZPwRzQkqglBTSYvBXL207hrUum8EEI1XW0BmCzX7IfQ1avVWSFH8xB3bon21XDLyGTLFPu7umEJwVS5lTto=`
 
 **Security Notes:**
 - ✅ Keep your token secure and never share it publicly

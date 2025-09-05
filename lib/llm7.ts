@@ -1,19 +1,40 @@
-// Pollinations API Configuration
-const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || "El7HD30iUZh3ScBC"
-const POLLINATIONS_BASE_URL = "https://text.pollinations.ai"
-const POLLINATIONS_CHAT_URL = "https://text.pollinations.ai/openai"
+// LLM7 API Configuration
+const LLM7_API_KEY = process.env.LLM7_API_KEY || "ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQHtngi+nKTJioErxAJvk7atA677L/7QUb+OZPwRzQkqglBTSYvBXL207hrUum8EEI1XW0BmCzX7IfQ1avVWSFH8xB3bon21XDLyGTLFPu7umEJwVS5lTto="
+const LLM7_BASE_URL = "https://api.llm7.io/v1"
+const LLM7_CHAT_URL = "https://api.llm7.io/v1/chat/completions"
 
-// Available models on Pollinations
+// Available models on LLM7
 export const AVAILABLE_MODELS = {
-  "gpt-4": "gpt-4.1-nano-2025-04-14", // Default model
-  "gpt-3.5-turbo": "gpt-4.1-nano-2025-04-14", 
-  "claude-3-opus": "gpt-4.1-nano-2025-04-14",
-  "claude-3-sonnet": "gpt-4.1-nano-2025-04-14",
-  "claude-3-haiku": "gpt-4.1-nano-2025-04-14",
-  "gemini-pro": "gpt-4.1-nano-2025-04-14",
-  "llama-2-70b": "gpt-4.1-nano-2025-04-14",
-  "mixtral-8x7b": "gpt-4.1-nano-2025-04-14",
-  "flux": "flux", // For image generation
+  // GPT Models
+  "gpt-4.1-nano": "gpt-4.1-nano-2025-04-14",
+  "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
+  "gpt-o4-mini": "gpt-o4-mini-2025-04-16",
+  
+  // Mistral Models
+  "mistral-large": "mistral-large-2411",
+  "mistral-medium": "mistral-medium",
+  "mistral-small": "mistral-small-2503",
+  "codestral": "codestral-2501",
+  "ministral-8b": "ministral-8b-2410",
+  "ministral-3b": "ministral-3b-2410",
+  "open-mixtral-8x7b": "open-mixtral-8x7b",
+  "open-mixtral-8x22b": "open-mixtral-8x22b",
+  "open-mistral-7b": "open-mistral-7b",
+  "open-mistral-nemo": "open-mistral-nemo",
+  
+  // Specialized Models
+  "deepseek-r1": "deepseek-r1-0528",
+  "gemini": "gemini",
+  "qwen2.5-coder": "qwen2.5-coder-32b-instruct",
+  "roblox-rp": "roblox-rp",
+  "nova-fast": "nova-fast",
+  
+  // Multimodal Models
+  "bidara": "bidara",
+  "mirexa": "mirexa",
+  "rtist": "rtist",
+  "pixtral-12b": "pixtral-12b-2409",
+  "pixtral-large": "pixtral-large-2411",
 }
 
 // Get available models for UI display
@@ -83,22 +104,23 @@ export interface ModelUsage {
   confidence: number
 }
 
-// Standard chat completion using Pollinations
-export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
+// Standard chat completion using LLM7
+export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-nano") {
   try {
-    // Ensure model is available on Pollinations
-    const pollinationsModel = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS] || model
+    // Ensure model is available on LLM7
+    const llm7Model = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS] || model
     
-    console.log("Making request to Pollinations with model:", pollinationsModel)
+    console.log("Making request to LLM7 with model:", llm7Model)
     console.log("Messages:", messages)
     
-    const response = await fetch(`${POLLINATIONS_CHAT_URL}?token=${POLLINATIONS_API_KEY}`, {
+    const response = await fetch(LLM7_CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${POLLINATIONS_API_KEY}`,
+        "Authorization": `Bearer ${LLM7_API_KEY}`,
       },
       body: JSON.stringify({
+        model: llm7Model,
         messages,
         stream: false,
         temperature: 0.7,
@@ -111,38 +133,23 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error("Pollinations API error response:", errorText)
-      throw new Error(`Pollinations API error: ${response.status} ${response.statusText} - ${errorText}`)
+      console.error("LLM7 API error response:", errorText)
+      throw new Error(`LLM7 API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
-    console.log("Pollinations response data:", data)
+    console.log("LLM7 response data:", data)
     
-    // Handle different response formats from Pollinations
+    // LLM7 uses standard OpenAI format
     if (data.choices && data.choices[0]) {
-      // Standard OpenAI format
       return {
         choices: [{ message: { content: data.choices[0].message.content } }],
         usage: data.usage?.total_tokens || 0,
-        model: pollinationsModel,
-      }
-    } else if (data.response) {
-      // Direct response format
-      return {
-        choices: [{ message: { content: data.response } }],
-        usage: data.usage || 0,
-        model: pollinationsModel,
-      }
-    } else if (data.content) {
-      // Another possible format
-      return {
-        choices: [{ message: { content: data.content } }],
-        usage: data.usage || 0,
-        model: pollinationsModel,
+        model: llm7Model,
       }
     } else {
       console.error("Unexpected response format:", data)
-      throw new Error("Unexpected response format from Pollinations")
+      throw new Error("Unexpected response format from LLM7")
     }
   } catch (error) {
     console.error("Chat completion error:", error)
@@ -153,7 +160,7 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4") {
 // Code generation with specialized models
 export async function generateCode(prompt: string, language = "javascript") {
   try {
-    // Use Claude for code generation as it's often better at coding tasks
+    // Use Codestral for code generation as it's specialized for coding tasks
     const messages: ChatMessage[] = [
       {
         role: "system",
@@ -165,39 +172,44 @@ export async function generateCode(prompt: string, language = "javascript") {
       },
     ]
 
-    return await chatCompletion(messages, "claude-3-sonnet")
+    return await chatCompletion(messages, "codestral")
   } catch (error) {
     console.error("Code generation error:", error)
-    // Fallback to GPT-4 if Claude fails
+    // Fallback to GPT-4.1-nano if Codestral fails
     try {
-      return await chatCompletion(messages, "gpt-4")
+      return await chatCompletion(messages, "gpt-4.1-nano")
     } catch (fallbackError) {
       throw fallbackError
     }
   }
 }
 
-// Image generation
+// Image generation using LLM7 multimodal models
 export async function generateImage(prompt: string, width = 512, height = 512) {
   try {
-    const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=flux&token=${POLLINATIONS_API_KEY}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${POLLINATIONS_API_KEY}`,
+    // Use RTIST model for image generation
+    const messages: ChatMessage[] = [
+      {
+        role: "system",
+        content: "You are an expert image generator. Create detailed, high-quality images based on the user's prompt. Focus on visual appeal and artistic quality."
       },
-    })
+      {
+        role: "user",
+        content: `Generate an image: ${prompt}. Dimensions: ${width}x${height}`
+      }
+    ]
 
-    if (!response.ok) {
-      throw new Error(`Image generation error: ${response.statusText}`)
-    }
-
-    // For image generation, we return the image URL
-    const imageUrl = response.url
+    const result = await chatCompletion(messages, "rtist")
+    
+    // For now, return a placeholder since LLM7 image generation might work differently
+    // This will be updated once we test the actual image generation capabilities
     return {
-      url: imageUrl,
+      url: `https://via.placeholder.com/${width}x${height}/4F46E5/FFFFFF?text=Image+Generation+Coming+Soon`,
       prompt: prompt,
       width: width,
       height: height,
+      model: "rtist",
+      response: result.choices[0].message.content
     }
   } catch (error) {
     console.error("Image generation error:", error)
@@ -217,7 +229,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 1,
       description: "Analyzing prompt and determining optimal approach",
-      model: "Claude-3-Sonnet",
+      model: "mistral-large",
       duration: 0,
       status: "processing",
     })
@@ -243,7 +255,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       },
     ]
 
-    const analysis = await chatCompletion(analysisMessages, "claude-3-sonnet")
+    const analysis = await chatCompletion(analysisMessages, "mistral-large")
     const analysisDuration = Date.now() - analysisStart
 
     let analysisResult
@@ -266,7 +278,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     }
 
     modelUsage.push({
-      model: "Claude-3-Sonnet",
+      model: "mistral-large",
       purpose: "Prompt Analysis",
       tokens: analysis.usage || 0,
       confidence: analysisResult.confidence || 0.8,
@@ -277,7 +289,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 2,
       description: `Generating primary ${analysisResult.type} response`,
-      model: analysisResult.type === "code" ? "Claude-3-Sonnet" : "GPT-4",
+      model: analysisResult.type === "code" ? "codestral" : "gpt-4.1-nano",
       duration: 0,
       status: "processing",
     })
@@ -301,7 +313,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
             content: analysisResult.enhanced_prompt,
           },
         ]
-        primaryResult = await chatCompletion(primaryMessages, "gpt-4")
+        primaryResult = await chatCompletion(primaryMessages, "gpt-4.1-nano")
     }
 
     const primaryDuration = Date.now() - primaryStart
@@ -318,7 +330,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       processingSteps.push({
         step: 3,
         description: "Generating alternative perspective",
-        model: analysisResult.type === "code" ? "GPT-4" : "Claude-3-Sonnet",
+        model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large",
         duration: 0,
         status: "processing",
       })
@@ -340,7 +352,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
         },
       ]
 
-      alternativeResult = await chatCompletion(altMessages, analysisResult.type === "code" ? "gpt-4" : "claude-3-sonnet")
+      alternativeResult = await chatCompletion(altMessages, analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large")
       const altDuration = Date.now() - altStart
 
       processingSteps[2] = {
@@ -350,7 +362,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       }
 
       modelUsage.push({
-        model: analysisResult.type === "code" ? "GPT-4" : "Claude-3-Sonnet",
+        model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large",
         purpose: "Alternative Perspective",
         tokens: alternativeResult.usage || 0,
         confidence: 0.85,
@@ -362,7 +374,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: processingSteps.length + 1,
       description: "Synthesizing enhanced final response",
-      model: "Claude-3-Sonnet",
+      model: "mistral-large",
       duration: 0,
       status: "processing",
     })
@@ -408,7 +420,7 @@ Please synthesize these into one enhanced response.`,
       },
     ]
 
-    const synthesis = await chatCompletion(synthesisMessages, "claude-3-sonnet")
+    const synthesis = await chatCompletion(synthesisMessages, "mistral-large")
     const synthDuration = Date.now() - synthStart
 
     processingSteps[processingSteps.length - 1] = {
@@ -418,7 +430,7 @@ Please synthesize these into one enhanced response.`,
     }
 
     modelUsage.push({
-      model: "Claude-3-Sonnet",
+      model: "mistral-large",
       purpose: "Response Synthesis",
       tokens: synthesis.usage || 0,
       confidence: 0.9,

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { chatCompletion, generateCode, generateImage, superModeCompletion } from "@/lib/pollinations"
+import { chatCompletion, generateCode, generateImage, superModeCompletion } from "@/lib/llm7"
 import jwt from "jsonwebtoken"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"

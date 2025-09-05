@@ -36,6 +36,11 @@ import {
   ChevronUp,
   Plus,
   History,
+  Terminal,
+  Brain,
+  Wand2,
+  Palette,
+  Cpu,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -46,24 +51,24 @@ const navigationItems = [
     icon: Home,
   },
   {
-    title: "Smart Chat",
-    url: "/chat?mode=chat",
+    title: "Chat",
+    url: "/chat",
     icon: MessageSquare,
   },
   {
-    title: "Code Assistant",
-    url: "/chat?mode=code",
-    icon: Code,
+    title: "Code Studio",
+    url: "/code",
+    icon: Terminal,
   },
   {
-    title: "Image Creator",
-    url: "/chat?mode=image",
+    title: "Image Lab",
+    url: "/image",
     icon: ImageIcon,
   },
   {
     title: "Super Mode",
-    url: "/chat?mode=super",
-    icon: Zap,
+    url: "/super",
+    icon: Brain,
   },
 ]
 
@@ -106,12 +111,12 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center bg-primary">
+            <Code className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold text-foreground">Pencil AI</span>
-            <span className="text-xs text-muted-foreground">AI Development Platform</span>
+            <span className="text-lg font-bold text-foreground monospace">PENCIL</span>
+            <span className="text-xs text-muted-foreground">AI STUDIO</span>
           </div>
         </div>
       </SidebarHeader>
@@ -119,15 +124,15 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>AI Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider">TOOLS</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(item.url)}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(item.url)} className="hover:bg-muted/50">
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -138,15 +143,15 @@ export function AppSidebar() {
 
         {/* Projects & History */}
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider">WORKSPACE</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {projectItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url} className="hover:bg-muted/50">
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -158,15 +163,15 @@ export function AppSidebar() {
         {/* Recent Conversations */}
         {recentChats.length > 0 && (
           <SidebarGroup>
-            <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider">RECENT</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {recentChats.map((chat: any) => (
                   <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild className="hover:bg-muted/50">
                       <Link href={`/chat/${chat.id}`}>
                         <MessageSquare className="h-4 w-4" />
-                        <span className="truncate">{chat.title}</span>
+                        <span className="truncate font-medium">{chat.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -178,22 +183,22 @@ export function AppSidebar() {
 
         {/* Quick Actions */}
         <SidebarGroup>
-          <SidebarGroupLabel>Quick Actions</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider">QUICK</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/chat?mode=chat">
+                <SidebarMenuButton asChild className="hover:bg-muted/50">
+                  <Link href="/chat">
                     <Plus className="h-4 w-4" />
-                    <span>New Chat</span>
+                    <span className="font-medium">New Chat</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/chat?mode=super">
-                    <Zap className="h-4 w-4" />
-                    <span>Try Super Mode</span>
+                <SidebarMenuButton asChild className="hover:bg-muted/50">
+                  <Link href="/super">
+                    <Brain className="h-4 w-4" />
+                    <span className="font-medium">Super Mode</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
