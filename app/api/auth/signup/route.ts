@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql, createUserPreferences } from "@/lib/database"
+import { sql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 
@@ -45,14 +45,7 @@ export async function POST(request: NextRequest) {
 
     const user = users[0]
 
-    try {
-      console.log("[v0] Creating user preferences")
-      await createUserPreferences(user.id)
-      console.log("[v0] User preferences created successfully")
-    } catch (prefError) {
-      console.log("[v0] User preferences creation failed, continuing without it:", prefError)
-      // Continue without preferences for now
-    }
+    console.log("[v0] Skipping user preferences creation for now")
 
     console.log("[v0] Generating JWT token")
     const token = jwt.sign({ userId: user.id, username: username, name: user.name }, JWT_SECRET, { expiresIn: "7d" })
