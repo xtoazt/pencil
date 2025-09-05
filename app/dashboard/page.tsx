@@ -57,16 +57,16 @@ export default function DashboardPage() {
     <AppLayout>
       <div className="space-y-8 animate-in fade-in-0 duration-700">
         {/* Welcome Section */}
-        <div className="space-y-3 animate-in slide-in-from-top-4 duration-500">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center animate-pulse">
-              <Sparkles className="h-6 w-6 text-primary" />
+        <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl pencil-gradient pencil-glow flex items-center justify-center pencil-float">
+              <Sparkles className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              <h1 className="text-5xl font-bold pencil-text-gradient">
                 Welcome back, {user?.name}
               </h1>
-              <p className="text-muted-foreground text-lg">Ready to create something amazing with AI?</p>
+              <p className="text-muted-foreground text-xl">Ready to create something amazing with AI?</p>
             </div>
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function DashboardPage() {
           ].map((stat, index) => (
             <Card
               key={index}
-              className="group hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1 border-0 bg-gradient-to-br from-card to-card/50 animate-in slide-in-from-bottom-4"
+              className="group hover:shadow-2xl hover:shadow-primary/20 transition-all duration-500 hover:-translate-y-2 border-0 pencil-card animate-in slide-in-from-bottom-4"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -138,7 +138,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold">AI Modes</h2>
             <Badge variant="outline" className="animate-pulse">
               <Cpu className="h-3 w-3 mr-1" />
-              All Systems Online
+              9 AI Models Available
             </Badge>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                 href: "/chat?mode=code",
                 icon: Code,
                 title: "Code Assistant",
-                badge: "Specialized",
+                badge: "Claude-3",
                 desc: "Generate, debug, and optimize code in any language",
                 gradient: "from-green-500/10 to-emerald-500/10",
                 iconColor: "text-green-500",
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                 href: "/chat?mode=super",
                 icon: Zap,
                 title: "Super Mode",
-                badge: "Multi-AI",
+                badge: "9 Models",
                 desc: "Enhanced responses using multiple AI models",
                 gradient: "from-secondary/20 to-secondary/10",
                 iconColor: "text-secondary",
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             ].map((mode, index) => (
               <Link key={index} href={mode.href}>
                 <Card
-                  className={`group hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-2 cursor-pointer border-0 bg-gradient-to-br ${mode.gradient} animate-in slide-in-from-bottom-4 ${mode.special ? "ring-1 ring-secondary/20" : ""}`}
+                  className={`group hover:shadow-2xl hover:shadow-primary/30 transition-all duration-500 hover:-translate-y-3 cursor-pointer border-0 pencil-card animate-in slide-in-from-bottom-4 ${mode.special ? "ring-2 ring-secondary/50 pencil-glow" : ""}`}
                   style={{ animationDelay: `${400 + index * 100}ms` }}
                 >
                   <CardHeader className="text-center pb-4">

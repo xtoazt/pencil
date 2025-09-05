@@ -105,12 +105,12 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Zap className="h-4 w-4" />
+        <div className="flex items-center gap-3 px-3 py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl pencil-gradient pencil-glow">
+            <Zap className="h-5 w-5 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold">Pencil AI</span>
+            <span className="text-lg font-bold pencil-text-gradient">Pencil AI</span>
             <span className="text-xs text-muted-foreground">Advanced AI Platform</span>
           </div>
         </div>

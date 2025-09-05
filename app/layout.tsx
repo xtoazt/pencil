@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "Pencil AI - Advanced AI Development Platform",
   description: "Combine the power of multiple AI models for chat, code generation, and more",
   generator: "Pencil AI",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 }
 
 export default function RootLayout({
@@ -22,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <AuthProvider>
             <Suspense fallback={null}>{children}</Suspense>
           </AuthProvider>

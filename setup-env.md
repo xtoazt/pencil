@@ -1,6 +1,6 @@
 # Environment Setup for Pencil AI
 
-To fix the signup internal server error, you need to set up the following environment variables:
+To fix the signup internal server error and enable AI functionality, you need to set up the following environment variables:
 
 ## Required Environment Variables
 
@@ -16,6 +16,23 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 # Node Environment
 NODE_ENV=development
 ```
+
+## AI Functionality
+
+**No API Keys Required!** 🎉
+
+Pencil AI uses [Pollinations](https://pollinations.ai/) which provides access to multiple AI models including:
+- **OpenAI Models:** GPT-4, GPT-3.5-turbo
+- **Anthropic Models:** Claude-3-Opus, Claude-3-Sonnet, Claude-3-Haiku
+- **Google Models:** Gemini-Pro
+- **Open Source Models:** Llama-2-70b, Mixtral-8x7b
+- **Image Generation:** FLUX
+
+The application intelligently selects the best model for each task:
+- **Code Generation:** Claude-3-Sonnet (with GPT-4 fallback)
+- **General Chat:** GPT-4
+- **Image Creation:** FLUX
+- **Super Mode:** Multi-model approach for enhanced responses
 
 ## Database Setup
 
