@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
     }
 
     const users = await sql`
-      SELECT * FROM neon_auth.users_sync 
-      WHERE raw_json->>'username' = ${username} 
+      SELECT * FROM users 
+      WHERE username = ${username} 
       AND deleted_at IS NULL
     `
 
@@ -24,8 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = users[0]
-    const userData = user.raw_json as any
-    const isValidPassword = await bcrypt.compare(password, userData.password || "")
+    const isValidPassword = await bcrypt.compare(password, user.password_hash || "")
 
     if (!isValidPassword) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
     const token = jwt.sign(
       {
         userId: user.id,
-        username: userData.username,
+        username: user.username,
         name: user.name,
       },
       JWT_SECRET,
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({
       id: user.id,
-      username: userData.username,
+      username: user.username,
       name: user.name,
     })
 

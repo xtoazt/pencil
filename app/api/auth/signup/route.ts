@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Checking for existing username")
     const existingUsers = await sql`
-      SELECT id FROM neon_auth.users_sync 
-      WHERE raw_json->>'username' = ${username} 
+      SELECT id FROM users 
+      WHERE username = ${username} 
       AND deleted_at IS NULL
     `
     console.log("[v0] Existing users found:", existingUsers.length)
@@ -38,17 +38,9 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Creating user in database")
     const users = await sql`
-      INSERT INTO neon_auth.users_sync (email, name, raw_json)
-      VALUES (
-        ${fakeEmail}, 
-        ${name}, 
-        ${JSON.stringify({
-          password: hashedPassword,
-          username: username,
-          displayName: name,
-        })}
-      )
-      RETURNING id, email, name
+      INSERT INTO users (email, name, username, password_hash)
+      VALUES (${fakeEmail}, ${name}, ${username}, ${hashedPassword})
+      RETURNING id, email, name, username
     `
 
     if (!users || users.length === 0) {

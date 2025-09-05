@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Get user from database
     const users = await sql`
-      SELECT id, email, name FROM neon_auth.users_sync 
+      SELECT id, email, name, username FROM users 
       WHERE id = ${decoded.userId} AND deleted_at IS NULL
     `
 
@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       email: user.email,
       name: user.name,
+      username: user.username,
     })
   } catch (error) {
     console.error("Auth check error:", error)
