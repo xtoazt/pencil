@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { User, Palette, Bell, Zap } from "lucide-react"
+import { User, Palette, Bell, Zap, Settings } from "lucide-react"
+import { AdvancedFeatures } from "@/components/advanced-features"
+import { NotificationControls } from "@/components/notification-system"
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -60,14 +62,19 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage your account and application preferences</p>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary flex items-center justify-center">
+            <Settings className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground monospace">SETTINGS</h1>
+            <p className="text-muted-foreground">Manage your account and application preferences</p>
+          </div>
         </div>
 
         <div className="grid gap-6">
           {/* Profile Settings */}
-          <Card>
+          <Card className="card-minimal">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -94,7 +101,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* AI Preferences */}
-          <Card>
+          <Card className="card-minimal">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5" />
@@ -135,7 +142,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Appearance */}
-          <Card>
+          <Card className="card-minimal">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
@@ -164,7 +171,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Notifications */}
-          <Card>
+          <Card className="card-minimal">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
@@ -183,8 +190,19 @@ export default function SettingsPage() {
                   onCheckedChange={(checked) => setPreferences((prev) => ({ ...prev, notifications: checked }))}
                 />
               </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Notification System</Label>
+                  <p className="text-sm text-muted-foreground">Control the in-app notification system</p>
+                </div>
+                <NotificationControls />
+              </div>
             </CardContent>
           </Card>
+
+          {/* Advanced Features */}
+          <AdvancedFeatures />
 
           {/* Save Button */}
           <div className="flex justify-end">

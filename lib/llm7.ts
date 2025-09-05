@@ -218,6 +218,9 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
     console.log("Making request to LLM7 with model:", llm7Model)
     console.log("Messages:", messages)
     
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    
     const response = await fetch(LLM7_CHAT_URL, {
       method: "POST",
       headers: {
@@ -231,7 +234,10 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
         temperature: 0.7,
         max_tokens: 2000,
       }),
+      signal: controller.signal,
     })
+    
+    clearTimeout(timeoutId)
 
     console.log("Response status:", response.status)
     console.log("Response headers:", Object.fromEntries(response.headers.entries()))
@@ -258,6 +264,9 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
     }
   } catch (error) {
     console.error("Chat completion error:", error)
+    if (error.name === 'AbortError') {
+      throw new Error("Request timed out after 30 seconds")
+    }
     throw error
   }
 }

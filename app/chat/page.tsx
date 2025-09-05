@@ -127,11 +127,11 @@ export default function ChatPage() {
 
       const data = await response.json()
       if (data.response) {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
           content: data.response,
-        timestamp: new Date(),
+          timestamp: new Date(),
           model: selectedModel,
           tokens: data.tokens
         }

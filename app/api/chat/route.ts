@@ -18,32 +18,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    const { message, mode, language, history } = await request.json()
+    const { messages, mode, language, model, width, height } = await request.json()
 
-    if (!message || !mode) {
-      return NextResponse.json({ error: "Message and mode required" }, { status: 400 })
+    if (!messages || !mode) {
+      return NextResponse.json({ error: "Messages and mode required" }, { status: 400 })
     }
+
+    // Extract the last user message
+    const lastMessage = messages[messages.length - 1]
+    const message = lastMessage?.content || ""
 
     let response: any
 
     switch (mode) {
       case "chat":
         // Standard chat mode
-        const chatMessages = [
-          {
-            role: "system" as const,
-            content: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses.",
-          },
-          ...history.map((msg: any) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-          {
-            role: "user" as const,
-            content: message,
-          },
-        ]
-        response = await chatCompletion(chatMessages)
+        response = await chatCompletion(messages, model)
         break
 
       case "code":
@@ -54,11 +44,10 @@ export async function POST(request: NextRequest) {
 
       case "image":
         // Image generation mode
-        response = await generateImage(message)
+        response = await generateImage(message, width, height)
         if (response.url) {
           return NextResponse.json({
-            content: `I've created an image for you: "${message}"`,
-            imageUrl: response.url,
+            response: response,
             type: "image",
           })
         }
@@ -85,8 +74,10 @@ export async function POST(request: NextRequest) {
     // Handle standard chat and code responses
     if (response.choices && response.choices[0]) {
       return NextResponse.json({
-        content: response.choices[0].message.content,
+        response: response.choices[0].message.content,
         type: mode,
+        tokens: response.usage?.total_tokens || 0,
+        model: response.model || model
       })
     }
 
