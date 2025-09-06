@@ -3,6 +3,8 @@ import { GitHubOAuth } from '@/lib/github'
 import { getSql } from '@/lib/database'
 import { verifyToken } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -26,21 +28,41 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get user from token (we'll need to extract user ID from the request)
-    // For now, we'll store the token and let the frontend handle user association
     const accessToken = tokenData.access_token
     
-    // Store the GitHub token in the database
-    // This is a simplified approach - in production, you'd want to associate with the authenticated user
+    // Get user info from GitHub to verify the token
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    })
+    
+    if (!userResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to verify GitHub token' },
+        { status: 400 }
+      )
+    }
+    
+    const githubUser = await userResponse.json()
+    
+    // Store the GitHub token in the database associated with the user
     const sql = getSql()
     
-    // For now, return the token to the frontend
+    // For now, we'll return the token to the frontend with user info
     // In production, you'd store this securely and associate with the user session
     return NextResponse.json({
       success: true,
       accessToken,
       tokenType: tokenData.token_type,
-      scope: tokenData.scope
+      scope: tokenData.scope,
+      user: {
+        id: githubUser.id,
+        login: githubUser.login,
+        name: githubUser.name,
+        avatar_url: githubUser.avatar_url
+      }
     })
     
   } catch (error) {

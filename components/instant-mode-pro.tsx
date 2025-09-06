@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// Removed tabs import - using auto mode instead
 import { 
   Zap, 
   Clipboard, 
@@ -89,6 +89,7 @@ export function InstantModePro() {
   const [tags, setTags] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("live")
+  const [autoMode, setAutoMode] = useState(true) // Auto mode prevents manual switching
   
   // Settings
   const [autoSpeak, setAutoSpeak] = useState(false)
@@ -108,39 +109,8 @@ export function InstantModePro() {
   const typingRef = useRef<HTMLTextAreaElement>(null)
   const speechSynthesis = useRef<SpeechSynthesisUtterance | null>(null)
 
-  // Clipboard Monitoring
-  const monitorClipboard = useCallback(async () => {
-    try {
-      const clipboardItems = await navigator.clipboard.read()
-      for (const clipboardItem of clipboardItems) {
-        for (const type of clipboardItem.types) {
-          if (type === 'text/plain') {
-            const blob = await clipboardItem.getType(type)
-            const text = await blob.text()
-            
-            if (text && text.length > 3 && text !== clipboardData?.content) {
-              setClipboardData({
-                content: text,
-                type: 'text/plain',
-                timestamp: new Date(),
-                length: text.length
-              })
-              
-              // Auto-process clipboard content
-              if (isActive) {
-                await processInstantRequest(text, 'clipboard')
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.log('Clipboard access denied or error:', error)
-    }
-  }, [clipboardData, isActive])
-
   // Process Instant Request
-  const processInstantRequest = async (content: string, source: InstantResponse['source']) => {
+  const processInstantRequest = useCallback(async (content: string, source: InstantResponse['source']) => {
     setIsProcessing(true)
     const startTime = Date.now()
     
@@ -197,7 +167,38 @@ export function InstantModePro() {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [maxAlternatives, confidenceThreshold, responseDelay, autoSpeak, setMetrics])
+
+  // Clipboard Monitoring
+  const monitorClipboard = useCallback(async () => {
+    try {
+      const clipboardItems = await navigator.clipboard.read()
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type === 'text/plain') {
+            const blob = await clipboardItem.getType(type)
+            const text = await blob.text()
+            
+            if (text && text.length > 3 && text !== clipboardData?.content) {
+              setClipboardData({
+                content: text,
+                type: 'text/plain',
+                timestamp: new Date(),
+                length: text.length
+              })
+              
+              // Auto-process clipboard content
+              if (isActive) {
+                await processInstantRequest(text, 'clipboard')
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Clipboard access denied or error:', error)
+    }
+  }, [clipboardData, isActive, processInstantRequest])
 
   // Text-to-Speech
   const speakResponse = (text: string) => {
@@ -312,15 +313,26 @@ export function InstantModePro() {
       <div className="flex-1 flex">
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 m-4">
-              <TabsTrigger value="live">Live Feed</TabsTrigger>
-              <TabsTrigger value="clipboard">Clipboard</TabsTrigger>
-              <TabsTrigger value="typing">Typing</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
+          <div className="flex-1 flex flex-col">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-mono">Instant Mode - Auto Processing</h2>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-green-600 border-green-600">
+                    <Zap className="h-3 w-3 mr-1" />
+                    Auto Mode
+                  </Badge>
+                  {isActive && (
+                    <Badge variant="outline" className="text-blue-600 border-blue-600">
+                      <Brain className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
 
-            <TabsContent value="live" className="flex-1 p-4">
+            <div className="flex-1 p-4">
               <div className="space-y-4">
                 {/* Live Response Feed */}
                 <Card>
@@ -386,9 +398,9 @@ export function InstantModePro() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="clipboard" className="flex-1 p-4">
+            <div className="hidden">
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -434,9 +446,9 @@ export function InstantModePro() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="typing" className="flex-1 p-4">
+            <div className="hidden">
               <div className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -474,9 +486,9 @@ export function InstantModePro() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="analytics" className="flex-1 p-4">
+            <div className="hidden">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-4">
@@ -526,7 +538,7 @@ export function InstantModePro() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </div>
           </Tabs>
         </div>
 

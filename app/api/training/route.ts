@@ -19,25 +19,41 @@ export async function GET(request: NextRequest) {
 
     const sql = getSql()
     
-    // Get user's training data
-    const trainingData = await sql`
-      SELECT 
-        COUNT(*) as total_messages,
-        COUNT(DISTINCT conversation_id) as total_conversations,
-        MIN(created_at) as first_message,
-        MAX(created_at) as last_message
-      FROM messages m
-      JOIN conversations c ON m.conversation_id = c.id
-      WHERE c.user_id = ${user.id} AND m.role = 'user'
-    `
+    // Get user's training data with better error handling
+    let trainingData
+    try {
+      trainingData = await sql`
+        SELECT 
+          COUNT(*) as total_messages,
+          COUNT(DISTINCT conversation_id) as total_conversations,
+          MIN(created_at) as first_message,
+          MAX(created_at) as last_message
+        FROM messages m
+        JOIN conversations c ON m.conversation_id = c.id
+        WHERE c.user_id = ${user.id} AND m.role = 'user'
+      `
+    } catch (dbError: any) {
+      console.error("Database error in training stats:", dbError)
+      // Return default stats if database query fails
+      return NextResponse.json({
+        messageCount: 0,
+        conversationCount: 0,
+        isReadyForDeployment: false,
+        progress: 0,
+        firstMessage: null,
+        lastMessage: null,
+        remainingMessages: 20,
+        warning: "Training data temporarily unavailable"
+      })
+    }
 
     const stats = trainingData[0] || { total_messages: 0, total_conversations: 0, first_message: null, last_message: null }
-    const messageCount = Number(stats.total_messages)
+    const messageCount = Number(stats.total_messages) || 0
     const isReadyForDeployment = messageCount >= 20
 
     return NextResponse.json({
       messageCount,
-      conversationCount: Number(stats.total_conversations),
+      conversationCount: Number(stats.total_conversations) || 0,
       isReadyForDeployment,
       progress: Math.min((messageCount / 20) * 100, 100),
       firstMessage: stats.first_message,

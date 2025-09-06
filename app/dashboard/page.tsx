@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { getAvailableModels } from "@/lib/llm7"
-import { SubtleAd } from "@/components/subtle-ad"
+import { TerminalAdComponent } from "@/components/ad-component"
 import {
   MessageSquare,
   Terminal,
@@ -330,8 +330,10 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Subtle Ad Section */}
-        <SubtleAd />
+        {/* Ad Section */}
+        <div className="flex justify-center">
+          <TerminalAdComponent />
+        </div>
       </div>
     </AppLayout>
   )

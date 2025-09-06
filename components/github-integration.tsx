@@ -78,11 +78,18 @@ export function GitHubIntegration({ onRepoSelect, onCommit, files = [] }: GitHub
       )
 
       // Listen for the popup to close and handle the callback
-      const checkClosed = setInterval(() => {
+      const checkClosed = setInterval(async () => {
         if (popup?.closed) {
           clearInterval(checkClosed)
-          // Try to get the token from the callback
-          // In a real implementation, you'd handle this through the callback route
+          
+          // Check if we have a token in localStorage from the callback
+          const token = localStorage.getItem('github_oauth_token')
+          if (token) {
+            setAccessToken(token)
+            setIsConnected(true)
+            await fetchRepositories(token)
+            localStorage.removeItem('github_oauth_token') // Clean up
+          }
         }
       }, 1000)
     } catch (error) {
@@ -212,29 +219,52 @@ export function GitHubIntegration({ onRepoSelect, onCommit, files = [] }: GitHub
 
   if (!isConnected) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card className="w-full card-terminal">
+        <CardHeader className="terminal-header">
+          <CardTitle className="flex items-center gap-2 font-mono">
             <Github className="h-5 w-5" />
             Connect to GitHub
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="font-mono text-sm">
             Connect your GitHub account to create repositories and commit code directly from Pencil
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="access-token">GitHub Access Token</Label>
-            <Input
-              id="access-token"
-              type="password"
-              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              You can generate a personal access token in your GitHub settings
-            </p>
+        <CardContent className="space-y-4 terminal-content">
+          <div className="space-y-4">
+            <Button 
+              onClick={connectToGitHub}
+              className="w-full btn-terminal"
+              size="lg"
+            >
+              <Github className="h-5 w-5 mr-2" />
+              Connect with GitHub OAuth
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or use personal access token
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="access-token">GitHub Personal Access Token</Label>
+              <Input
+                id="access-token"
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                className="input-terminal"
+              />
+              <p className="text-sm text-muted-foreground">
+                Generate a personal access token in your GitHub settings with repo permissions
+              </p>
+            </div>
           </div>
           
           {error && (
@@ -244,32 +274,24 @@ export function GitHubIntegration({ onRepoSelect, onCommit, files = [] }: GitHub
             </div>
           )}
           
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleTokenSubmit} 
-              disabled={!accessToken.trim() || isLoading}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Github className="h-4 w-4 mr-2" />
-                  Connect
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={connectToGitHub}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              OAuth
-            </Button>
-          </div>
+          <Button 
+            onClick={handleTokenSubmit} 
+            disabled={!accessToken.trim() || isLoading}
+            variant="outline"
+            className="w-full btn-terminal"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <Github className="h-4 w-4 mr-2" />
+                Connect with Token
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     )

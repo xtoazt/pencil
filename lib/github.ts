@@ -10,7 +10,7 @@ export const GITHUB_APP_CONFIG = {
   appId: process.env.GITHUB_APP_ID || '1909450',
   privateKey: process.env.GITHUB_PRIVATE_KEY || '',
   webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || '',
-  redirectUri: process.env.GITHUB_REDIRECT_URI || 'https://pencilx.vercel.app/api/github/callback'
+  redirectUri: process.env.GITHUB_REDIRECT_URI || 'https://pencilx.vercel.app/github/callback'
 }
 
 // GitHub API Client

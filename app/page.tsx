@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { ApiStatus } from "@/components/api-status"
+import { TerminalAdComponent } from "@/components/ad-component"
 import Link from "next/link"
 import { ArrowRight, MessageSquare, Code, ImageIcon, Zap, Shield, Activity } from "lucide-react"
 
@@ -125,6 +126,11 @@ export default function HomePage() {
                 Revolutionary multi-model AI for enhanced responses
               </p>
             </div>
+          </div>
+
+          {/* Ad Section */}
+          <div className="mt-16 flex justify-center animate-in fade-in duration-1200 delay-1100 slide-in-from-bottom-8">
+            <TerminalAdComponent />
           </div>
 
           {/* Advanced Features Section */}
