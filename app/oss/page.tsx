@@ -50,6 +50,7 @@ import {
   TrendingUp,
   Target,
   Lightbulb,
+  MessageSquare,
   Sparkles,
   Crown,
   Gem,
@@ -385,11 +386,12 @@ export default function OSSModePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="deployments">Deployments</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="community">Community</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -732,6 +734,94 @@ export default function OSSModePage() {
                   </Button>
                 </Card>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold mb-4 font-mono">OSS Mode Chat</h2>
+                <p className="text-lg text-muted-foreground font-mono">
+                  Chat with your trained OSS model. Make sure you have at least 20 messages to start chatting.
+                </p>
+              </div>
+
+              <Card className="card-terminal">
+                <CardHeader className="terminal-header">
+                  <CardTitle className="flex items-center gap-2 font-mono">
+                    <MessageSquare className="h-5 w-5" />
+                    Chat Interface
+                  </CardTitle>
+                  <CardDescription className="font-mono text-sm">
+                    {trainingStats?.isReadyForDeployment ? 
+                      `Ready to chat! You have ${trainingStats.messageCount} training messages.` :
+                      `Need ${trainingStats?.remainingMessages || 20} more messages to start chatting.`
+                    }
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="terminal-content">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted rounded border min-h-[300px] max-h-[400px] overflow-y-auto">
+                      <div className="space-y-3">
+                        {trainingStats?.isReadyForDeployment ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="font-mono">Start a conversation with your OSS model!</p>
+                            <p className="font-mono text-sm">Your model is trained and ready to respond.</p>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="font-mono">Model not ready for deployment</p>
+                            <p className="font-mono text-sm">
+                              You need at least 20 messages to train your model. 
+                              You currently have {trainingStats?.messageCount || 0} messages.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Textarea
+                        placeholder="Type your message here..."
+                        className="input-terminal flex-1 font-mono text-sm"
+                        disabled={!trainingStats?.isReadyForDeployment}
+                      />
+                      <Button
+                        className="btn-terminal"
+                        disabled={!trainingStats?.isReadyForDeployment}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Send
+                      </Button>
+                    </div>
+                    
+                    {trainingStats && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted rounded border">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-mono text-green-600">
+                            {trainingStats.messageCount}
+                          </div>
+                          <div className="text-sm text-muted-foreground font-mono">Training Messages</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-mono text-blue-600">
+                            {trainingStats.conversationCount}
+                          </div>
+                          <div className="text-sm text-muted-foreground font-mono">Conversations</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold font-mono text-purple-600">
+                            {Math.round(trainingStats.progress)}%
+                          </div>
+                          <div className="text-sm text-muted-foreground font-mono">Training Progress</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>

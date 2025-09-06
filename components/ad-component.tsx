@@ -9,28 +9,33 @@ interface AdComponentProps {
 
 export function AdComponent({ className = "", style }: AdComponentProps) {
   useEffect(() => {
-    // Load Google AdSense script
-    const script = document.createElement('script')
-    script.async = true
-    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2612092132708362'
-    script.crossOrigin = 'anonymous'
-    document.head.appendChild(script)
-
-    // Initialize ads when script loads
-    script.onload = () => {
+    // Check if AdSense script is already loaded
+    if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
       try {
-        if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({})
-        }
+        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({})
       } catch (error) {
         console.log('AdSense initialization error:', error)
       }
-    }
+    } else {
+      // Load Google AdSense script if not already loaded
+      const existingScript = document.querySelector('script[src*="adsbygoogle.js"]')
+      if (!existingScript) {
+        const script = document.createElement('script')
+        script.async = true
+        script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2612092132708362'
+        script.crossOrigin = 'anonymous'
+        document.head.appendChild(script)
 
-    return () => {
-      // Cleanup script on unmount
-      if (document.head.contains(script)) {
-        document.head.removeChild(script)
+        // Initialize ads when script loads
+        script.onload = () => {
+          try {
+            if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+              ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({})
+            }
+          } catch (error) {
+            console.log('AdSense initialization error:', error)
+          }
+        }
       }
     }
   }, [])

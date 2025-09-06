@@ -432,6 +432,59 @@ export function InstantModePro() {
                   </CardContent>
                 </Card>
 
+                {/* Manual Input */}
+                <Card className="card-terminal">
+                  <CardHeader className="terminal-header">
+                    <CardTitle className="flex items-center gap-2 font-mono">
+                      <MessageSquare className="h-5 w-5" />
+                      Manual Input
+                    </CardTitle>
+                    <CardDescription className="font-mono text-sm">
+                      Type or paste content for instant AI processing
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="terminal-content">
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="manual-input" className="font-mono text-sm">Enter text for AI processing:</Label>
+                        <Textarea
+                          id="manual-input"
+                          placeholder="Type or paste your content here for instant AI analysis..."
+                          value={typingContent}
+                          onChange={(e) => setTypingContent(e.target.value)}
+                          className="input-terminal min-h-[120px] font-mono text-sm"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => processInstantRequest(typingContent, 'typing')}
+                          disabled={!typingContent.trim() || isProcessing}
+                          className="btn-terminal flex-1"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Brain className="h-4 w-4 mr-2" />
+                              Process with AI
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => setTypingContent("")}
+                          variant="outline"
+                          className="btn-terminal"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Performance Metrics */}
                 <Card className="card-terminal">
                   <CardHeader className="terminal-header">

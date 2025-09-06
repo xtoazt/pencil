@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { HuggingFaceModels } from "@/components/huggingface-models"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Cpu, 
@@ -409,18 +410,18 @@ export function LocalAIStudio() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-            <Cpu className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Cpu className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold font-mono">
               LocalAI Studio
             </h1>
-            <p className="text-sm text-muted-foreground">Local AI Models & Inference</p>
+            <p className="text-sm text-muted-foreground font-mono">Local AI Models & Inference</p>
           </div>
         </div>
         
@@ -465,11 +466,12 @@ export function LocalAIStudio() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 m-4">
+            <TabsList className="grid w-full grid-cols-5 m-4">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="image">Image</TabsTrigger>
               <TabsTrigger value="audio">Audio</TabsTrigger>
               <TabsTrigger value="models">Models</TabsTrigger>
+              <TabsTrigger value="huggingface">HuggingFace</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat" className="flex-1 p-4">
@@ -824,6 +826,10 @@ export function LocalAIStudio() {
                   </Card>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="huggingface" className="flex-1 p-4">
+              <HuggingFaceModels />
             </TabsContent>
           </Tabs>
         </div>
