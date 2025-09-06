@@ -56,9 +56,7 @@ import {
   Diamond,
   Star,
   Award,
-  Trophy,
-  BookOpen,
-  ExternalLink
+  Trophy
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth-provider"

@@ -6,7 +6,12 @@ const GEMINI_API_KEYS = [
   "AIzaSyAlW8aX7ZL7g6qnl6b2ZpYWKB0eWGfNsUY",
   "AIzaSyA7E34AEBhmt6_52pRnn4W1_q8GS8pps8A",
   "AIzaSyDwmohY6E4Xy-O425qttWXmqknxQ_i9JVU",
-  "AIzaSyD4vXsehTtCwfeYiP_euZeCXx56a0TKV3s"
+  "AIzaSyD4vXsehTtCwfeYiP_euZeCXx56a0TKV3s",
+  "AIzaSyCoa1QC-jkkCwlkL47hzbX9JDboIHdzqSM",
+  "AIzaSyBLbmpUVElRNlNSH-XjXWSOH-K3Qqiopco",
+  "AIzaSyDCNUwFlG1yFnl7t3fvkVDHLzad7UaAq00",
+  "AIzaSyB-JYIiFWjBkZn2ZFEraUGx965i8BLpKgU",
+  "AIzaSyAl4nkBjsaci9GBqNyVD1uKcx8HR94Ohmw"
 ]
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
@@ -181,6 +186,240 @@ export async function geminiInstantCompletion(content: string): Promise<{
     processingTime: Date.now() - startTime,
     apiKey: bestResponse.apiKey,
     alternatives
+  }
+}
+
+// New 4-API Instant Mode System
+export async function geminiClipboardResponse(
+  clipboardContent: string
+): Promise<{
+  content: string
+  model: string
+  processingTime: number
+  apiKey: string
+}> {
+  const startTime = Date.now()
+  const apiKey = GEMINI_API_KEYS[0] // Use first API key
+  const model = 'gemini-1.5-flash'
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Based on this clipboard content: "${clipboardContent}"\n\nProvide a helpful, concise response.`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 60,
+          candidateCount: 1
+        }
+      }),
+      signal: AbortSignal.timeout(1500)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Clipboard API failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const processingTime = Date.now() - startTime
+      return {
+        content: data.candidates[0].content.parts[0].text,
+        model,
+        processingTime,
+        apiKey: 'clipboard-api'
+      }
+    }
+    
+    throw new Error('Invalid clipboard response')
+  } catch (error) {
+    console.error('Clipboard response error:', error)
+    throw new Error(`Clipboard response failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+export async function geminiTypingResponse(
+  currentText: string
+): Promise<{
+  content: string
+  model: string
+  processingTime: number
+  apiKey: string
+}> {
+  const startTime = Date.now()
+  const apiKey = GEMINI_API_KEYS[1] // Use second API key
+  const model = 'gemini-1.5-flash'
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `User is typing: "${currentText}"\n\nPredict what they might want to ask and provide a helpful response.`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 60,
+          candidateCount: 1
+        }
+      }),
+      signal: AbortSignal.timeout(1500)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Typing API failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const processingTime = Date.now() - startTime
+      return {
+        content: data.candidates[0].content.parts[0].text,
+        model,
+        processingTime,
+        apiKey: 'typing-api'
+      }
+    }
+    
+    throw new Error('Invalid typing response')
+  } catch (error) {
+    console.error('Typing response error:', error)
+    throw new Error(`Typing response failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+export async function geminiSendButtonResponse(
+  finalText: string
+): Promise<{
+  content: string
+  model: string
+  processingTime: number
+  apiKey: string
+}> {
+  const startTime = Date.now()
+  const apiKey = GEMINI_API_KEYS[2] // Use third API key
+  const model = 'gemini-1.5-flash'
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `User's final message: "${finalText}"\n\nProvide a comprehensive, helpful response.`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.5,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 100,
+          candidateCount: 1
+        }
+      }),
+      signal: AbortSignal.timeout(2000)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Send button API failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const processingTime = Date.now() - startTime
+      return {
+        content: data.candidates[0].content.parts[0].text,
+        model,
+        processingTime,
+        apiKey: 'send-button-api'
+      }
+    }
+    
+    throw new Error('Invalid send button response')
+  } catch (error) {
+    console.error('Send button response error:', error)
+    throw new Error(`Send button response failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+export async function geminiCombineResponses(
+  response1: string,
+  response2: string
+): Promise<{
+  content: string
+  model: string
+  processingTime: number
+  apiKey: string
+}> {
+  const startTime = Date.now()
+  const apiKey = GEMINI_API_KEYS[3] || GEMINI_API_KEYS[0] // Use fourth API key or fallback
+  const model = 'gemini-1.5-flash'
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Combine these two responses into the best possible answer:\n\nResponse 1: "${response1}"\n\nResponse 2: "${response2}"\n\nCreate a comprehensive, helpful final response.`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 120,
+          candidateCount: 1
+        }
+      }),
+      signal: AbortSignal.timeout(2000)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Combine API failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const processingTime = Date.now() - startTime
+      return {
+        content: data.candidates[0].content.parts[0].text,
+        model,
+        processingTime,
+        apiKey: 'combine-api'
+      }
+    }
+    
+    throw new Error('Invalid combine response')
+  } catch (error) {
+    console.error('Combine response error:', error)
+    throw new Error(`Combine response failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

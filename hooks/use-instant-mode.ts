@@ -16,10 +16,10 @@ interface InstantResponse {
   id: string
   content: string
   timestamp: number
-  source: 'clipboard' | 'typing'
+  source: 'clipboard' | 'typing' | 'send-button' | 'combined'
   processingTime: number
   model: string
-  alternatives?: string[]
+  apiKey: string
 }
 
 interface UseInstantModeReturn {
@@ -30,18 +30,23 @@ interface UseInstantModeReturn {
   settings: InstantModeSettings
   currentClipboard: string
   currentTyping: string
+  clipboardResponse: string | null
+  typingResponse: string | null
+  finalResponse: string | null
   toggleInstantMode: () => Promise<void>
   requestClipboardPermission: () => Promise<boolean>
-  processInstantRequest: (content: string, source: 'clipboard' | 'typing') => Promise<void>
+  processClipboardContent: (content: string) => Promise<void>
+  processTypingContent: (text: string) => Promise<void>
+  processSendButton: (finalText: string) => Promise<void>
   updateSettings: (newSettings: Partial<InstantModeSettings>) => void
   handleTypingChange: (text: string) => void
   clearContent: () => void
 }
 
 const defaultSettings: InstantModeSettings = {
-  clipboardEnabled: false,
+  clipboardEnabled: true,
   typingEnabled: true,
-  responseDelay: 500,
+  responseDelay: 200,
   maxClipboardLength: 1000,
   maxTypingLength: 500,
   autoProcess: true,
@@ -56,12 +61,14 @@ export function useInstantMode(): UseInstantModeReturn {
   const [settings, setSettings] = useState<InstantModeSettings>(defaultSettings)
   const [currentClipboard, setCurrentClipboard] = useState("")
   const [currentTyping, setCurrentTyping] = useState("")
-
+  const [clipboardResponse, setClipboardResponse] = useState<string | null>(null)
+  const [typingResponse, setTypingResponse] = useState<string | null>(null)
+  const [finalResponse, setFinalResponse] = useState<string | null>(null)
+  
   const clipboardIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const lastClipboardRef = useRef("")
-  const lastTypingRef = useRef("")
-  const workerRef = useRef<Worker | null>(null)
+  const lastClipboardContent = useRef("")
+  const lastTypingContent = useRef("")
 
   // Request clipboard permission
   const requestClipboardPermission = useCallback(async (): Promise<boolean> => {
@@ -74,195 +81,195 @@ export function useInstantMode(): UseInstantModeReturn {
         }
       }
       
-      // Fallback: try to read clipboard directly
-      const text = await navigator.clipboard.readText()
-      setHasPermission(true)
-      return true
+      // Try to read clipboard to trigger permission request
+      try {
+        await navigator.clipboard.readText()
+        setHasPermission(true)
+        return true
+      } catch (error) {
+        console.warn('Clipboard permission denied:', error)
+        setHasPermission(false)
+        return false
+      }
     } catch (error) {
-      console.error('Clipboard permission denied:', error)
+      console.error('Error requesting clipboard permission:', error)
       setHasPermission(false)
       return false
     }
   }, [])
 
-  // Monitor clipboard changes with improved detection - MANDATORY
-  const monitorClipboard = useCallback(async () => {
-    if (!hasPermission) {
-      // Always try to get permission if we don't have it
-      await requestClipboardPermission()
+  // Process clipboard content with API 1
+  const processClipboardContent = useCallback(async (content: string) => {
+    if (!content || content.length < 3 || content === lastClipboardContent.current) {
       return
     }
 
+    lastClipboardContent.current = content
+    setCurrentClipboard(content)
+    setIsProcessing(true)
+
     try {
-      const text = await navigator.clipboard.readText()
-      if (text && 
-          text !== lastClipboardRef.current && 
-          text.length <= settings.maxClipboardLength &&
-          text.length > 3 && // Only process meaningful content
-          text.trim() !== '') {
-        lastClipboardRef.current = text
-        setCurrentClipboard(text)
-        
-        // Always process clipboard content when Instant Mode is active
-        if (isActive) {
-          await processInstantRequest(text, 'clipboard')
-        }
+      const { geminiClipboardResponse } = await import("@/lib/gemini")
+      const result = await geminiClipboardResponse(content)
+      
+      const response: InstantResponse = {
+        id: `clipboard-${Date.now()}`,
+        content: result.content,
+        timestamp: Date.now(),
+        source: 'clipboard',
+        processingTime: result.processingTime,
+        model: result.model,
+        apiKey: result.apiKey
       }
+
+      setClipboardResponse(result.content)
+      setResponses(prev => [response, ...prev.slice(0, 9)]) // Keep last 10 responses
     } catch (error) {
-      console.error('Failed to read clipboard:', error)
-      // Try to re-request permission if it fails
-      if (error.name === 'NotAllowedError') {
-        setHasPermission(false)
-        // Automatically request permission again
-        setTimeout(() => requestClipboardPermission(), 1000)
-      }
+      console.error('Clipboard processing error:', error)
+    } finally {
+      setIsProcessing(false)
     }
-  }, [hasPermission, settings.maxClipboardLength, isActive, requestClipboardPermission])
+  }, [])
 
-  // Handle typing changes
-  const handleTypingChange = useCallback((text: string) => {
-    if (!settings.typingEnabled || text.length > settings.maxTypingLength) return
+  // Process typing content with API 2
+  const processTypingContent = useCallback(async (text: string) => {
+    if (!text || text.length < 3 || text === lastTypingContent.current) {
+      return
+    }
 
+    lastTypingContent.current = text
     setCurrentTyping(text)
-    lastTypingRef.current = text
 
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
 
-    // Set new timeout for processing
-    if (text.length > 10 && settings.autoProcess && isActive) {
-      typingTimeoutRef.current = setTimeout(() => {
-        processInstantRequest(text, 'typing')
-      }, settings.responseDelay)
-    }
-  }, [settings.typingEnabled, settings.maxTypingLength, settings.autoProcess, settings.responseDelay, isActive])
-
-  // Process instant AI request using Gemini
-  const processInstantRequest = useCallback(async (content: string, source: 'clipboard' | 'typing') => {
-    if (isProcessing) return
-
-    setIsProcessing(true)
-    const startTime = Date.now()
-
-    try {
-      const response = await fetch("/api/instant", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: content,
-          source: source
-        }),
-      })
-
-      const data = await response.json()
-      const processingTime = Date.now() - startTime
-
-      if (data.content) {
-        const newResponse: InstantResponse = {
-          id: Date.now().toString(),
-          content: data.content,
+    // Set new timeout for typing response
+    typingTimeoutRef.current = setTimeout(async () => {
+      try {
+        const { geminiTypingResponse } = await import("@/lib/gemini")
+        const result = await geminiTypingResponse(text)
+        
+        const response: InstantResponse = {
+          id: `typing-${Date.now()}`,
+          content: result.content,
           timestamp: Date.now(),
-          source,
-          processingTime: data.processingTime || processingTime,
-          model: data.model || "gemini-1.5-flash-multi",
-          alternatives: data.alternatives || []
+          source: 'typing',
+          processingTime: result.processingTime,
+          model: result.model,
+          apiKey: result.apiKey
         }
 
-        setResponses(prev => [newResponse, ...prev.slice(0, 9)]) // Keep last 10 responses
+        setTypingResponse(result.content)
+        setResponses(prev => [response, ...prev.slice(0, 9)])
+      } catch (error) {
+        console.error('Typing processing error:', error)
+      }
+    }, settings.responseDelay)
+  }, [settings.responseDelay])
+
+  // Process send button with API 3
+  const processSendButton = useCallback(async (finalText: string) => {
+    if (!finalText || finalText.length < 3) {
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      const { geminiSendButtonResponse } = await import("@/lib/gemini")
+      const result = await geminiSendButtonResponse(finalText)
+      
+      const response: InstantResponse = {
+        id: `send-${Date.now()}`,
+        content: result.content,
+        timestamp: Date.now(),
+        source: 'send-button',
+        processingTime: result.processingTime,
+        model: result.model,
+        apiKey: result.apiKey
+      }
+
+      setResponses(prev => [response, ...prev.slice(0, 9)])
+
+      // If we have both clipboard and typing responses, combine them with API 4
+      if (clipboardResponse && typingResponse) {
+        try {
+          const { geminiCombineResponses } = await import("@/lib/gemini")
+          const combinedResult = await geminiCombineResponses(clipboardResponse, typingResponse)
+          
+          const combinedResponse: InstantResponse = {
+            id: `combined-${Date.now()}`,
+            content: combinedResult.content,
+            timestamp: Date.now(),
+            source: 'combined',
+            processingTime: combinedResult.processingTime,
+            model: combinedResult.model,
+            apiKey: combinedResult.apiKey
+          }
+
+          setFinalResponse(combinedResult.content)
+          setResponses(prev => [combinedResponse, ...prev.slice(0, 9)])
+        } catch (error) {
+          console.error('Combine response error:', error)
+          setFinalResponse(result.content)
+        }
+      } else {
+        setFinalResponse(result.content)
       }
     } catch (error) {
-      console.error("Instant processing error:", error)
+      console.error('Send button processing error:', error)
     } finally {
       setIsProcessing(false)
     }
-  }, [isProcessing])
+  }, [clipboardResponse, typingResponse])
 
-  // Initialize worker
-  useEffect(() => {
-    if (typeof Worker !== 'undefined') {
-      workerRef.current = new Worker('/instant-worker.js')
-      
-      workerRef.current.onmessage = (e) => {
-        const { type, data } = e.data
-        
-        switch (type) {
-          case 'CLIPBOARD_CHANGED':
-            setCurrentClipboard(data.content)
-            if (settings.autoProcess && isActive) {
-              processInstantRequest(data.content, 'clipboard')
-            }
-            break
-            
-          case 'INSTANT_RESPONSE':
-            const newResponse: InstantResponse = {
-              id: Date.now().toString(),
-              content: data.content,
-              timestamp: data.timestamp,
-              source: data.source,
-              processingTime: 0, // Worker doesn't track this
-              model: data.model
-            }
-            setResponses(prev => [newResponse, ...prev.slice(0, 9)])
-            break
-        }
-      }
+  // Monitor clipboard
+  const monitorClipboard = useCallback(async () => {
+    if (!hasPermission || !settings.clipboardEnabled) {
+      return
     }
 
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate()
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text && text.length > 3 && text.trim() !== '' && text !== lastClipboardContent.current) {
+        await processClipboardContent(text)
       }
+    } catch (error) {
+      // Silently handle clipboard errors
     }
-  }, [settings.autoProcess, isActive, processInstantRequest])
+  }, [hasPermission, settings.clipboardEnabled, processClipboardContent])
 
-  // Start/stop monitoring
+  // Handle typing changes
+  const handleTypingChange = useCallback((text: string) => {
+    setCurrentTyping(text)
+    if (settings.typingEnabled && settings.autoProcess) {
+      processTypingContent(text)
+    }
+  }, [settings.typingEnabled, settings.autoProcess, processTypingContent])
+
+  // Toggle instant mode
   const toggleInstantMode = useCallback(async () => {
     if (!isActive) {
-      // Starting instant mode - clipboard is mandatory
       const permissionGranted = await requestClipboardPermission()
-      if (!permissionGranted) {
-        alert("Clipboard permission is required for Instant Mode. Please allow clipboard access.")
-        return
-      }
-
-      setIsActive(true)
-      
-      // Start clipboard monitoring with ultra-fast polling - ALWAYS ENABLED
-      clipboardIntervalRef.current = setInterval(monitorClipboard, 200) // Check every 200ms for ultra-fast response
-        
-      // Start worker monitoring
-      if (workerRef.current) {
-        workerRef.current.postMessage({
-          type: 'START_MONITORING',
-          data: { apiEndpoint: '/api/instant' }
-        })
+      if (permissionGranted) {
+        setIsActive(true)
+        // Start clipboard monitoring
+        clipboardIntervalRef.current = setInterval(monitorClipboard, 200) // Faster polling
       }
     } else {
-      // Stopping instant mode
       setIsActive(false)
-      
       if (clipboardIntervalRef.current) {
         clearInterval(clipboardIntervalRef.current)
         clipboardIntervalRef.current = null
       }
-      
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
         typingTimeoutRef.current = null
       }
-      
-      // Stop worker monitoring
-      if (workerRef.current) {
-        workerRef.current.postMessage({
-          type: 'STOP_MONITORING'
-        })
-      }
     }
-  }, [isActive, settings.clipboardEnabled, requestClipboardPermission, monitorClipboard])
+  }, [isActive, requestClipboardPermission, monitorClipboard])
 
   // Update settings
   const updateSettings = useCallback((newSettings: Partial<InstantModeSettings>) => {
@@ -273,8 +280,12 @@ export function useInstantMode(): UseInstantModeReturn {
   const clearContent = useCallback(() => {
     setCurrentClipboard("")
     setCurrentTyping("")
-    lastClipboardRef.current = ""
-    lastTypingRef.current = ""
+    setClipboardResponse(null)
+    setTypingResponse(null)
+    setFinalResponse(null)
+    setResponses([])
+    lastClipboardContent.current = ""
+    lastTypingContent.current = ""
   }, [])
 
   // Cleanup on unmount
@@ -285,9 +296,6 @@ export function useInstantMode(): UseInstantModeReturn {
       }
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
-      }
-      if (workerRef.current) {
-        workerRef.current.terminate()
       }
     }
   }, [])
@@ -300,9 +308,14 @@ export function useInstantMode(): UseInstantModeReturn {
     settings,
     currentClipboard,
     currentTyping,
+    clipboardResponse,
+    typingResponse,
+    finalResponse,
     toggleInstantMode,
     requestClipboardPermission,
-    processInstantRequest,
+    processClipboardContent,
+    processTypingContent,
+    processSendButton,
     updateSettings,
     handleTypingChange,
     clearContent

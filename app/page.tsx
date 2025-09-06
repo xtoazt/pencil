@@ -22,16 +22,16 @@ export default function HomePage() {
 
   if (user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background text-foreground">
         <div className="container mx-auto px-6 py-24">
           <div className="text-center max-w-2xl mx-auto animate-in fade-in duration-1000 slide-in-from-bottom-8">
-            <h1 className="text-3xl font-medium mb-4 text-balance">Welcome back, {user.username}</h1>
+            <h1 className="text-3xl font-medium mb-4 text-balance text-foreground">Welcome back, {user.username}</h1>
             <p className="text-muted-foreground mb-8 animate-in fade-in duration-1000 delay-300">
               Ready to create something amazing?
             </p>
             <div className="animate-in fade-in duration-1000 delay-500">
               <Link href="/dashboard">
-                <Button className="gap-2 h-10 px-6 transition-all duration-300 hover:gap-3 hover:shadow-xl hover:shadow-foreground/20 hover:bg-foreground/90">
+                <Button className="gap-2 h-10 px-6 transition-all duration-300 hover:gap-3 hover:shadow-xl hover:shadow-primary/20 hover:bg-primary/90 bg-primary text-primary-foreground hover:text-primary-foreground">
                   Go to Dashboard{" "}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
@@ -44,10 +44,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-6 py-24">
         <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-6xl font-medium mb-6 text-balance tracking-tight animate-in fade-in duration-1200 slide-in-from-bottom-12">
+          <h1 className="text-6xl font-medium mb-6 text-balance tracking-tight animate-in fade-in duration-1200 slide-in-from-bottom-12 text-foreground">
             Pencil AI
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty leading-relaxed animate-in fade-in duration-1200 delay-300 slide-in-from-bottom-8">
@@ -62,7 +62,7 @@ export default function HomePage() {
 
           <div className="flex gap-3 justify-center mb-20 animate-in fade-in duration-1200 delay-600 slide-in-from-bottom-6">
             <Link href="/signup">
-              <Button className="gap-2 h-11 px-8 transition-all duration-300 hover:gap-3 hover:shadow-2xl hover:shadow-foreground/30 hover:bg-foreground/90 group">
+              <Button className="gap-2 h-11 px-8 transition-all duration-300 hover:gap-3 hover:shadow-2xl hover:shadow-primary/30 hover:bg-primary/90 bg-primary text-primary-foreground hover:text-primary-foreground group">
                 Get Started{" "}
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
@@ -70,7 +70,7 @@ export default function HomePage() {
             <Link href="/login">
               <Button
                 variant="outline"
-                className="h-11 px-8 bg-transparent transition-all duration-300 hover:bg-muted/80 hover:shadow-lg hover:shadow-muted/50"
+                className="h-11 px-8 bg-transparent border-border text-foreground hover:bg-muted/80 hover:shadow-lg hover:shadow-muted/50 transition-all duration-300"
               >
                 Sign In
               </Button>
@@ -80,9 +80,9 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center group animate-in fade-in duration-1200 delay-700 slide-in-from-bottom-8">
               <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                <MessageSquare className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                <MessageSquare className="h-6 w-6 text-muted-foreground transition-all duration-300 group-hover:text-accent-foreground group-hover:brightness-125" />
               </div>
-              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+              <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-accent group-hover:brightness-110">
                 Smart Chat
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -92,9 +92,9 @@ export default function HomePage() {
 
             <div className="text-center group animate-in fade-in duration-1200 delay-800 slide-in-from-bottom-8">
               <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                <Code className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                <Code className="h-6 w-6 text-muted-foreground transition-all duration-300 group-hover:text-accent-foreground group-hover:brightness-125" />
               </div>
-              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+              <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-accent group-hover:brightness-110">
                 Code Generation
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -104,9 +104,9 @@ export default function HomePage() {
 
             <div className="text-center group animate-in fade-in duration-1200 delay-900 slide-in-from-bottom-8">
               <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                <ImageIcon className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                <ImageIcon className="h-6 w-6 text-muted-foreground transition-all duration-300 group-hover:text-accent-foreground group-hover:brightness-125" />
               </div>
-              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+              <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-accent group-hover:brightness-110">
                 Image Creation
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -115,10 +115,10 @@ export default function HomePage() {
             </div>
 
             <div className="text-center group animate-in fade-in duration-1200 delay-1000 slide-in-from-bottom-8">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-foreground flex items-center justify-center transition-all duration-500 group-hover:bg-primary group-hover:shadow-2xl group-hover:shadow-primary/50 group-hover:brightness-125">
-                <Zap className="h-6 w-6 text-background transition-all duration-300 group-hover:brightness-150 group-hover:rotate-12" />
+              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-primary flex items-center justify-center transition-all duration-500 group-hover:bg-primary/90 group-hover:shadow-2xl group-hover:shadow-primary/50 group-hover:brightness-125">
+                <Zap className="h-6 w-6 text-primary-foreground transition-all duration-300 group-hover:brightness-150 group-hover:rotate-12" />
               </div>
-              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+              <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-primary group-hover:brightness-110">
                 Super Mode
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -130,7 +130,7 @@ export default function HomePage() {
           {/* Advanced Features Section */}
           <div className="mt-24 max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-medium mb-4">Advanced Infrastructure</h2>
+              <h2 className="text-3xl font-medium mb-4 text-foreground">Advanced Infrastructure</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 Built with enterprise-grade reliability and intelligent systems
               </p>
@@ -139,9 +139,9 @@ export default function HomePage() {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="text-center group animate-in fade-in duration-1200 delay-1100 slide-in-from-bottom-8">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                  <Shield className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                  <Shield className="h-6 w-6 text-muted-foreground transition-all duration-300 group-hover:text-accent-foreground group-hover:brightness-125" />
                 </div>
-                <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+                <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-accent group-hover:brightness-110">
                   API Rotation System
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -151,9 +151,9 @@ export default function HomePage() {
 
               <div className="text-center group animate-in fade-in duration-1200 delay-1200 slide-in-from-bottom-8">
                 <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                  <Activity className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                  <Activity className="h-6 w-6 text-muted-foreground transition-all duration-300 group-hover:text-accent-foreground group-hover:brightness-125" />
                 </div>
-                <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+                <h3 className="font-medium mb-2 text-foreground transition-all duration-300 group-hover:text-accent group-hover:brightness-110">
                   Real-time Monitoring
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
@@ -166,13 +166,13 @@ export default function HomePage() {
           {/* Instant Mode Feature */}
           <div className="mt-16 max-w-2xl mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-medium mb-4">⚡ Instant Mode</h2>
+              <h2 className="text-2xl font-medium mb-4 text-foreground">⚡ Instant Mode</h2>
               <p className="text-muted-foreground mb-6">
                 Ultra-fast AI responses with clipboard monitoring and predictive typing
               </p>
               <div className="flex gap-3 justify-center">
                 <Link href="/signup">
-                  <Button className="gap-2 h-11 px-8 transition-all duration-300 hover:gap-3 hover:shadow-2xl hover:shadow-foreground/30 hover:bg-foreground/90 group">
+                  <Button className="gap-2 h-11 px-8 transition-all duration-300 hover:gap-3 hover:shadow-2xl hover:shadow-primary/30 hover:bg-primary/90 bg-primary text-primary-foreground hover:text-primary-foreground group">
                     Try Instant Mode{" "}
                     <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Button>

@@ -26,7 +26,11 @@ import {
   Monitor,
   Smartphone,
   Gauge,
-  Timer
+  Timer,
+  Send,
+  Type,
+  MousePointer,
+  Layers
 } from "lucide-react"
 
 export default function InstantModePage() {
@@ -38,9 +42,14 @@ export default function InstantModePage() {
     settings,
     currentClipboard,
     currentTyping,
+    clipboardResponse,
+    typingResponse,
+    finalResponse,
     toggleInstantMode,
     requestClipboardPermission,
-    processInstantRequest,
+    processClipboardContent,
+    processTypingContent,
+    processSendButton,
     updateSettings,
     handleTypingChange,
     clearContent
@@ -49,438 +58,408 @@ export default function InstantModePage() {
   const [geminiStatus, setGeminiStatus] = useState({
     availableKeys: 0,
     averageResponseTime: 0,
-    health: 'unknown'
+    status: 'healthy' as 'healthy' | 'degraded' | 'unhealthy'
   })
 
+  const [userInput, setUserInput] = useState("")
+  const [showSettings, setShowSettings] = useState(false)
+
+  // Fetch Gemini status
   useEffect(() => {
-    const fetchGeminiStatus = async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await fetch("/api/gemini/status")
+        const response = await fetch('/api/gemini/status')
         if (response.ok) {
           const data = await response.json()
-          setGeminiStatus({
-            availableKeys: data.status.availableKeys,
-            averageResponseTime: data.health.averageResponseTime,
-            health: data.health.status
-          })
+          setGeminiStatus(data)
         }
       } catch (error) {
-        console.error("Failed to fetch Gemini status:", error)
+        console.error('Failed to fetch Gemini status:', error)
       }
     }
 
-    fetchGeminiStatus()
-    const interval = setInterval(fetchGeminiStatus, 30000) // Update every 30 seconds
+    fetchStatus()
+    const interval = setInterval(fetchStatus, 30000) // Update every 30 seconds
     return () => clearInterval(interval)
   }, [])
 
+  const handleSendMessage = async () => {
+    if (!userInput.trim()) return
+    
+    await processSendButton(userInput.trim())
+    setUserInput("")
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    // Remove Enter key functionality - only allow Send button
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Do nothing - user must click Send button
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'bg-green-500'
+      case 'degraded': return 'bg-yellow-500'
+      case 'unhealthy': return 'bg-red-500'
+      default: return 'bg-gray-500'
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'healthy': return 'All Systems Operational'
+      case 'degraded': return 'Some Delays Expected'
+      case 'unhealthy': return 'Service Issues Detected'
+      default: return 'Status Unknown'
+    }
+  }
+
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex-1 flex flex-col h-full bg-background text-foreground">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-primary flex items-center justify-center">
-            <Zap className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground monospace">INSTANT MODE</h1>
-            <p className="text-muted-foreground">Ultra-fast AI responses with clipboard monitoring and predictive typing</p>
+        <div className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground">Instant Mode</h1>
+                  <p className="text-sm text-muted-foreground">Ultra-fast AI with 4-API system</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(geminiStatus.status)}`}></div>
+                  <span className="text-xs text-muted-foreground">{getStatusText(geminiStatus.status)}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSettings(!showSettings)}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Controls */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Gemini Status */}
-            <Card className="card-minimal border-green-200 bg-green-50/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-800">
-                  <Gauge className="h-5 w-5" />
-                  Ultra-Fast Gemini Engine
-                </CardTitle>
-                <CardDescription className="text-green-700">
-                  Powered by 7 rotating Gemini API keys for maximum speed
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{geminiStatus.availableKeys}/7</div>
-                    <div className="text-xs text-green-700">Active Keys</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {geminiStatus.averageResponseTime < 1000 
-                        ? `${Math.round(geminiStatus.averageResponseTime)}ms` 
-                        : `${(geminiStatus.averageResponseTime / 1000).toFixed(1)}s`}
-                    </div>
-                    <div className="text-xs text-green-700">Avg Response</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {geminiStatus.health === 'healthy' ? '⚡' : 
-                       geminiStatus.health === 'degraded' ? '⚠️' : '❌'}
-                    </div>
-                    <div className="text-xs text-green-700 capitalize">{geminiStatus.health}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            {/* Status Card */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Instant Mode Status
-                </CardTitle>
-                <CardDescription>Monitor and control your instant AI experience</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                    <span className="font-medium">Instant Mode</span>
-                  </div>
-                  <Button
-                    onClick={toggleInstantMode}
-                    variant={isActive ? "destructive" : "default"}
-                    className={isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-                  >
-                    {isActive ? (
-                      <>
-                        <Pause className="h-4 w-4 mr-2" />
-                        Stop
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Start
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clipboard className="h-4 w-4" />
-                    <span className="text-sm">Clipboard (MANDATORY)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {hasPermission ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    )}
-                    <Badge variant="default" className="bg-green-600">
-                      Always On
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Brain className="h-4 w-4" />
-                    <span className="text-sm">Predictive</span>
-                  </div>
-                  <Switch
-                    checked={settings.typingEnabled}
-                    onCheckedChange={(checked) => updateSettings({ typingEnabled: checked })}
-                    disabled={isActive}
-                  />
-                </div>
-                </div>
-
-                {isProcessing && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
-                    Processing instant request...
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Input Area */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Monitor className="h-5 w-5" />
-                  Instant Input
-                </CardTitle>
-                <CardDescription>Type here for instant AI analysis</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Current Clipboard Content (Ultra-Fast Monitoring)</Label>
-                  <div className="p-3 bg-muted rounded border min-h-20 max-h-32 overflow-auto">
-                    {currentClipboard ? (
-                      <div>
-                        <p className="text-sm font-medium mb-1">📋 Clipboard Content:</p>
-                        <p className="text-sm">{currentClipboard}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Length: {currentClipboard.length} characters • Last updated: {new Date().toLocaleTimeString()}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-muted-foreground">No clipboard content detected</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Copy something to see it here instantly (200ms polling)
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Type for Instant Analysis</Label>
-                  <Input
-                    placeholder="Start typing for instant AI responses..."
-                    value={currentTyping}
-                    onChange={(e) => handleTypingChange(e.target.value)}
-                    className="min-h-20"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => processInstantRequest(currentClipboard || currentTyping, 'clipboard')}
-                    disabled={!currentClipboard && !currentTyping}
-                    size="sm"
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Process Now
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={clearContent}
-                    size="sm"
-                  >
-                    Clear
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Responses */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Instant Responses
-                </CardTitle>
-                <CardDescription>Your latest instant AI responses</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {responses.length > 0 ? (
-                  <div className="space-y-3">
-                    {responses.map((response) => (
-                      <div key={response.id} className="p-3 border border-border rounded">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {response.source === 'clipboard' ? (
-                                <>
-                                  <Clipboard className="h-3 w-3 mr-1" />
-                                  Clipboard
-                                </>
-                              ) : (
-                                <>
-                                  <Brain className="h-3 w-3 mr-1" />
-                                  Typing
-                                </>
-                              )}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {response.processingTime}ms
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {response.model}
-                            </Badge>
-                            {response.alternatives && response.alternatives.length > 0 && (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                {response.alternatives.length} alternatives
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(response.timestamp).toLocaleTimeString()}
-                          </span>
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full flex flex-col lg:flex-row">
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col">
+              {/* 4-API System Status */}
+              <div className="p-6 border-b border-border">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                          <Clipboard className="h-4 w-4 text-blue-500" />
                         </div>
-                        <p className="text-sm mb-2">{response.content}</p>
-                        
-                        {/* Show alternatives if available */}
-                        {response.alternatives && response.alternatives.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            <p className="text-xs text-muted-foreground font-medium">Alternative responses:</p>
-                            {response.alternatives.map((alt, index) => (
-                              <div key={index} className="p-2 bg-muted/30 rounded text-xs text-muted-foreground border-l-2 border-muted">
-                                {alt}
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div>
+                          <p className="text-sm font-medium text-foreground">API 1: Clipboard</p>
+                          <p className="text-xs text-muted-foreground">
+                            {clipboardResponse ? 'Active' : 'Monitoring'}
+                          </p>
+                        </div>
                       </div>
-                    ))}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                          <Type className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">API 2: Typing</p>
+                          <p className="text-xs text-muted-foreground">
+                            {typingResponse ? 'Active' : 'Monitoring'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                          <MousePointer className="h-4 w-4 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">API 3: Send Button</p>
+                          <p className="text-xs text-muted-foreground">Ready</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                          <Layers className="h-4 w-4 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">API 4: Combine</p>
+                          <p className="text-xs text-muted-foreground">
+                            {finalResponse ? 'Active' : 'Standby'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Input Area */}
+              <div className="flex-1 p-6">
+                <div className="max-w-4xl mx-auto">
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-foreground">Ultra-Fast AI Input</CardTitle>
+                      <CardDescription>
+                        Type your message and click Send (Enter key disabled for maximum speed)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          value={userInput}
+                          onChange={(e) => {
+                            setUserInput(e.target.value)
+                            handleTypingChange(e.target.value)
+                          }}
+                          onKeyPress={handleKeyPress}
+                          placeholder="Type your message here..."
+                          className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
+                        />
+                        <Button 
+                          onClick={handleSendMessage}
+                          disabled={!userInput.trim() || isProcessing}
+                          className="bg-primary text-primary-foreground hover:bg-primary/90"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {isProcessing && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-muted border-t-foreground"></div>
+                          Processing with 4-API system...
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Responses Display */}
+                  <div className="mt-6 space-y-4">
+                    {clipboardResponse && (
+                      <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <Clipboard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <CardTitle className="text-sm text-blue-800 dark:text-blue-200">Clipboard Response</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-blue-700 dark:text-blue-300">{clipboardResponse}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {typingResponse && (
+                      <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <Type className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <CardTitle className="text-sm text-green-800 dark:text-green-200">Typing Response</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-green-700 dark:text-green-300">{typingResponse}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {finalResponse && (
+                      <Card className="bg-primary/10 border-primary/20">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-2">
+                            <Layers className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm text-foreground">Final Combined Response</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-foreground">{finalResponse}</p>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No instant responses yet</p>
-                    <p className="text-sm text-muted-foreground">Start typing or copy something to clipboard</p>
-                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="w-full lg:w-80 border-l border-border bg-card/30">
+              <div className="p-6 space-y-6">
+                {/* Instant Mode Toggle */}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <Zap className="h-5 w-5" />
+                      Instant Mode
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="instant-mode" className="text-foreground">
+                        {isActive ? 'Active' : 'Inactive'}
+                      </Label>
+                      <Button
+                        onClick={toggleInstantMode}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        className={isActive ? "bg-primary text-primary-foreground" : ""}
+                      >
+                        {isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                    </div>
+
+                    {!hasPermission && (
+                      <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <div>
+                          <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">Permission Required</p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">Click to enable clipboard access</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {hasPermission && (
+                      <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <div>
+                          <p className="text-xs font-medium text-green-800 dark:text-green-200">Always On</p>
+                          <p className="text-xs text-green-700 dark:text-green-300">Clipboard monitoring active</p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Clipboard Status */}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <Clipboard className="h-5 w-5" />
+                      Clipboard Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Content Length:</span>
+                      <Badge variant="outline" className="text-foreground border-border">
+                        {currentClipboard.length} chars
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Last Updated:</span>
+                      <span className="text-xs text-muted-foreground">
+                        {currentClipboard ? new Date().toLocaleTimeString() : 'Never'}
+                      </span>
+                    </div>
+                    {currentClipboard && (
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Current Content:</p>
+                        <p className="text-xs text-foreground line-clamp-3">{currentClipboard}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Performance Stats */}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <Gauge className="h-5 w-5" />
+                      Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Available APIs:</span>
+                      <Badge variant="outline" className="text-foreground border-border">
+                        {geminiStatus.availableKeys}/12
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Avg Response:</span>
+                      <Badge variant="outline" className="text-foreground border-border">
+                        {geminiStatus.averageResponseTime}ms
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      <Badge 
+                        variant="outline" 
+                        className={`border-border ${
+                          geminiStatus.status === 'healthy' ? 'text-green-600 dark:text-green-400' :
+                          geminiStatus.status === 'degraded' ? 'text-yellow-600 dark:text-yellow-400' :
+                          'text-red-600 dark:text-red-400'
+                        }`}
+                      >
+                        {geminiStatus.status}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recent Responses */}
+                {responses.length > 0 && (
+                  <Card className="bg-card border-border">
+                    <CardHeader>
+                      <CardTitle className="text-foreground flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Recent Responses
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {responses.slice(0, 5).map((response) => (
+                          <div key={response.id} className="p-2 bg-muted/30 rounded text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <Badge variant="outline" className="text-xs border-border">
+                                {response.source}
+                              </Badge>
+                              <span className="text-muted-foreground">{response.processingTime}ms</span>
+                            </div>
+                            <p className="text-foreground line-clamp-2">{response.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Settings Sidebar */}
-          <div className="space-y-6">
-            {/* Settings */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Response Delay (ms)</Label>
-                  <Input
-                    type="number"
-                    value={settings.responseDelay}
-                    onChange={(e) => updateSettings({ responseDelay: parseInt(e.target.value) || 500 })}
-                    min="100"
-                    max="2000"
-                    step="100"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Max Clipboard Length</Label>
-                  <Input
-                    type="number"
-                    value={settings.maxClipboardLength}
-                    onChange={(e) => updateSettings({ maxClipboardLength: parseInt(e.target.value) || 1000 })}
-                    min="100"
-                    max="5000"
-                    step="100"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Max Typing Length</Label>
-                  <Input
-                    type="number"
-                    value={settings.maxTypingLength}
-                    onChange={(e) => updateSettings({ maxTypingLength: parseInt(e.target.value) || 500 })}
-                    min="50"
-                    max="2000"
-                    step="50"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">Auto Process</Label>
-                  <Switch
-                    checked={settings.autoProcess}
-                    onCheckedChange={(checked) => updateSettings({ autoProcess: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">Show Preview</Label>
-                  <Switch
-                    checked={settings.showPreview}
-                    onCheckedChange={(checked) => updateSettings({ showPreview: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Permissions */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  Permissions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Clipboard Access</span>
-                  {hasPermission ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  )}
-                </div>
-                
-                {!hasPermission && (
-                  <Button
-                    size="sm"
-                    onClick={requestClipboardPermission}
-                    className="w-full"
-                  >
-                    Grant Permission
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Stats */}
-            <Card className="card-minimal">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Timer className="h-5 w-5" />
-                  Performance Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Total Responses</span>
-                  <span className="font-mono">{responses.length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Avg Response Time</span>
-                  <span className="font-mono text-green-600">
-                    {responses.length > 0 
-                      ? Math.round(responses.reduce((acc, r) => acc + r.processingTime, 0) / responses.length)
-                      : 0}ms
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Fastest Response</span>
-                  <span className="font-mono text-green-600">
-                    {responses.length > 0 
-                      ? Math.min(...responses.map(r => r.processingTime))
-                      : 0}ms
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Clipboard Responses</span>
-                  <span className="font-mono">
-                    {responses.filter(r => r.source === 'clipboard').length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Typing Responses</span>
-                  <span className="font-mono">
-                    {responses.filter(r => r.source === 'typing').length}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Gemini Engine</span>
-                  <span className="font-mono text-green-600">
-                    {geminiStatus.health === 'healthy' ? '⚡ Optimal' : 
-                     geminiStatus.health === 'degraded' ? '⚠️ Good' : '❌ Issues'}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+                {/* Clear Button */}
+                <Button
+                  onClick={clearContent}
+                  variant="outline"
+                  className="w-full border-border text-foreground hover:bg-muted"
+                >
+                  Clear All Content
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
