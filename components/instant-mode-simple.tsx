@@ -75,7 +75,7 @@ interface ClipboardData {
 
 export function InstantModePro() {
   // Core State
-  const [isActive, setIsActive] = useState(false)
+  const [isActive, setIsActive] = useState(true) // Auto-start when component loads
   const [clipboardData, setClipboardData] = useState<ClipboardData | null>(null)
   const [typingContent, setTypingContent] = useState("")
   const [responses, setResponses] = useState<InstantResponse[]>([])

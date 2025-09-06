@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { HuggingFaceModels } from "@/components/huggingface-models"
+import { LocalAIIntegration } from "@/components/localai-integration"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   Cpu, 
@@ -466,12 +467,13 @@ export function LocalAIStudio() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-5 m-4">
+            <TabsList className="grid w-full grid-cols-6 m-4">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="image">Image</TabsTrigger>
               <TabsTrigger value="audio">Audio</TabsTrigger>
               <TabsTrigger value="models">Models</TabsTrigger>
               <TabsTrigger value="huggingface">HuggingFace</TabsTrigger>
+              <TabsTrigger value="localai">LocalAI</TabsTrigger>
             </TabsList>
 
             <TabsContent value="chat" className="flex-1 p-4">
@@ -830,6 +832,10 @@ export function LocalAIStudio() {
 
             <TabsContent value="huggingface" className="flex-1 p-4">
               <HuggingFaceModels />
+            </TabsContent>
+
+            <TabsContent value="localai" className="flex-1 p-4">
+              <LocalAIIntegration />
             </TabsContent>
           </Tabs>
         </div>
