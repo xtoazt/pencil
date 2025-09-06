@@ -149,16 +149,17 @@ export default function HomePage() {
                 </p>
               </div>
 
-            <div className="text-center group animate-in fade-in duration-1200 delay-1200 slide-in-from-bottom-8">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
-                <Activity className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+              <div className="text-center group animate-in fade-in duration-1200 delay-1200 slide-in-from-bottom-8">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
+                  <Activity className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                </div>
+                <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+                  Real-time Monitoring
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
+                  Live performance tracking and automatic optimization
+                </p>
               </div>
-              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
-                Real-time Monitoring
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
-                Live performance tracking and automatic optimization
-              </p>
             </div>
           </div>
 
