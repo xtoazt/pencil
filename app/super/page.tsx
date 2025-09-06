@@ -605,15 +605,15 @@ export default function SuperModePage() {
                     Open Source Model Training
                   </CardTitle>
                   <CardDescription>
-                    Train your own lightweight AI models using open source frameworks
+                    Train your own PencilGPT models using open source frameworks
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 border border-border rounded">
                       <div className="text-2xl mb-2">🤖</div>
-                      <h3 className="font-semibold">Custom Models</h3>
-                      <p className="text-sm text-muted-foreground">Train models on your data</p>
+                      <h3 className="font-semibold">PencilGPT Models</h3>
+                      <p className="text-sm text-muted-foreground">Train PencilGPT on your data</p>
                     </div>
                     <div className="text-center p-4 border border-border rounded">
                       <div className="text-2xl mb-2">⚡</div>
@@ -637,9 +637,9 @@ export default function SuperModePage() {
                       <Brain className="h-5 w-5" />
                       Fine-tune Existing Models
                     </CardTitle>
-                    <CardDescription>
-                      Adapt pre-trained models to your specific use case
-                    </CardDescription>
+                  <CardDescription>
+                    Fine-tune PencilGPT for your specific use case
+                  </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
@@ -720,7 +720,7 @@ export default function SuperModePage() {
                       <div className="text-4xl mb-4">🚀</div>
                       <h3 className="text-lg font-semibold mb-2">Ready to Train</h3>
                       <p className="text-muted-foreground mb-4">
-                        Upload your dataset and start training your custom model
+                        Upload your dataset and start training your PencilGPT model
                       </p>
                       <Button className="button-minimal bg-accent hover:bg-accent/90 text-accent-foreground">
                         <Crown className="h-4 w-4 mr-2" />

@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
       processingTime: result.processingTime,
       apiKey: result.apiKey,
       source: source || 'unknown',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      alternatives: result.alternatives || []
     })
   } catch (error: any) {
     console.error("Instant API error:", error)

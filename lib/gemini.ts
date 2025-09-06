@@ -64,27 +64,37 @@ export function getGeminiStatus() {
   }
 }
 
-// Ultra-fast Gemini completion for Instant Mode
+// Ultra-fast Gemini completion for Instant Mode with multi-response analysis
 export async function geminiInstantCompletion(content: string): Promise<{
   content: string
   model: string
   processingTime: number
   apiKey: string
+  alternatives?: string[]
 }> {
-  let attempts = 0
-  const maxAttempts = GEMINI_API_KEYS.length
   const startTime = Date.now()
   
-  while (attempts < maxAttempts) {
+  // Use 3 different API keys to generate multiple perspectives
+  const keysToUse = GEMINI_API_KEYS.slice(0, 3) // Use first 3 keys
+  const prompts = [
+    `Provide a direct, helpful response to: ${content}`,
+    `Give a concise, practical answer for: ${content}`,
+    `Offer a quick, insightful response to: ${content}`
+  ]
+  
+  const responses: Array<{
+    content: string
+    apiKey: string
+    processingTime: number
+  }> = []
+  
+  // Generate responses in parallel for speed
+  const promises = keysToUse.map(async (apiKey, index) => {
     try {
-      const currentApiKey = getCurrentGeminiKey()
-      
-      console.log(`Making ultra-fast request to Gemini with key: ${currentGeminiKeyIndex + 1}/${GEMINI_API_KEYS.length}`)
-      
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for instant mode
+      const timeoutId = setTimeout(() => controller.abort(), 3000)
       
-      const response = await fetch(`${GEMINI_BASE_URL}?key=${currentApiKey}`, {
+      const response = await fetch(`${GEMINI_BASE_URL}?key=${apiKey}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,12 +102,12 @@ export async function geminiInstantCompletion(content: string): Promise<{
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Respond quickly and concisely to: ${content}`
+              text: prompts[index]
             }]
           }],
           generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 150, // Keep responses short for speed
+            temperature: 0.3 + (index * 0.1), // Vary temperature for different perspectives
+            maxOutputTokens: 120,
             topP: 0.8,
             topK: 10
           }
@@ -106,63 +116,112 @@ export async function geminiInstantCompletion(content: string): Promise<{
       })
       
       clearTimeout(timeoutId)
-      const processingTime = Date.now() - startTime
-
+      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error("Gemini API error response:", errorText)
+        console.error(`Gemini API error with key ${index + 1}:`, errorText)
         
-        // Check if it's a rate limit or quota exceeded error
         if (response.status === 429 || response.status === 403 || errorText.includes("quota") || errorText.includes("limit")) {
-          markGeminiKeyExhausted(currentApiKey, `HTTP ${response.status}: ${errorText}`)
-          attempts++
-          continue // Try next API key
+          markGeminiKeyExhausted(apiKey, `HTTP ${response.status}: ${errorText}`)
         }
-        
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`)
+        return null
       }
 
       const data = await response.json()
-      console.log("Gemini response data:", data)
       
-      // Update API key usage and performance
-      if (!geminiKeyStatus[currentApiKey]) {
-        geminiKeyStatus[currentApiKey] = { exhausted: false, lastUsed: 0, errorCount: 0, responseTime: 0 }
+      // Update API key usage
+      if (!geminiKeyStatus[apiKey]) {
+        geminiKeyStatus[apiKey] = { exhausted: false, lastUsed: 0, errorCount: 0, responseTime: 0 }
       }
-      geminiKeyStatus[currentApiKey].lastUsed = Date.now()
-      geminiKeyStatus[currentApiKey].responseTime = processingTime
+      geminiKeyStatus[apiKey].lastUsed = Date.now()
+      geminiKeyStatus[apiKey].responseTime = Date.now() - startTime
       
-      // Extract content from Gemini response
+      // Extract content
       if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
         const responseText = data.candidates[0].content.parts[0].text
-        
         return {
           content: responseText,
-          model: "gemini-1.5-flash",
-          processingTime,
-          apiKey: currentApiKey.substring(0, 10) + "..." // Partial key for logging
+          apiKey: apiKey.substring(0, 10) + "...",
+          processingTime: Date.now() - startTime
         }
-      } else {
-        console.error("Unexpected Gemini response format:", data)
-        throw new Error("Unexpected response format from Gemini")
       }
+      
+      return null
     } catch (error) {
-      console.error("Gemini instant completion error:", error)
-      
-      // If it's a network error or timeout, try next API key
+      console.error(`Gemini completion error with key ${index + 1}:`, error)
       if (error.name === 'AbortError' || error.message.includes('fetch')) {
-        markGeminiKeyExhausted(getCurrentGeminiKey(), error.message)
-        attempts++
-        continue
+        markGeminiKeyExhausted(apiKey, error.message)
       }
-      
-      // For other errors, throw immediately
-      throw error
+      return null
     }
+  })
+  
+  // Wait for all responses
+  const results = await Promise.all(promises)
+  const validResponses = results.filter(result => result !== null) as Array<{
+    content: string
+    apiKey: string
+    processingTime: number
+  }>
+  
+  if (validResponses.length === 0) {
+    throw new Error("All Gemini API keys failed. Please try again later.")
   }
   
-  // If we've exhausted all API keys
-  throw new Error("All Gemini API keys have been exhausted. Please try again later.")
+  // Select the best response based on length, clarity, and completeness
+  const bestResponse = selectBestResponse(validResponses, content)
+  const alternatives = validResponses
+    .filter(r => r.content !== bestResponse.content)
+    .map(r => r.content)
+    .slice(0, 2) // Keep top 2 alternatives
+  
+  return {
+    content: bestResponse.content,
+    model: "gemini-1.5-flash-multi",
+    processingTime: Date.now() - startTime,
+    apiKey: bestResponse.apiKey,
+    alternatives
+  }
+}
+
+// Helper function to select the best response
+function selectBestResponse(responses: Array<{ content: string; apiKey: string; processingTime: number }>, originalContent: string): { content: string; apiKey: string; processingTime: number } {
+  if (responses.length === 1) return responses[0]
+  
+  // Score responses based on multiple criteria
+  const scoredResponses = responses.map(response => {
+    let score = 0
+    const content = response.content
+    
+    // Length score (prefer responses that are not too short or too long)
+    const length = content.length
+    if (length >= 20 && length <= 200) score += 3
+    else if (length >= 10 && length <= 300) score += 2
+    else if (length >= 5 && length <= 500) score += 1
+    
+    // Completeness score (prefer responses that seem complete)
+    if (content.includes('.') || content.includes('!') || content.includes('?')) score += 2
+    if (content.length > 30 && !content.endsWith('...')) score += 2
+    
+    // Relevance score (prefer responses that address the original content)
+    const originalWords = originalContent.toLowerCase().split(' ').filter(w => w.length > 3)
+    const responseWords = content.toLowerCase().split(' ')
+    const matchingWords = originalWords.filter(word => responseWords.some(rw => rw.includes(word)))
+    score += matchingWords.length
+    
+    // Clarity score (prefer responses without excessive repetition)
+    const words = content.toLowerCase().split(' ')
+    const uniqueWords = new Set(words)
+    const repetitionScore = uniqueWords.size / words.length
+    score += repetitionScore * 2
+    
+    return { ...response, score }
+  })
+  
+  // Return the highest scoring response
+  return scoredResponses.reduce((best, current) => 
+    current.score > best.score ? current : best
+  )
 }
 
 // Parallel processing for multiple requests (for future use)

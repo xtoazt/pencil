@@ -64,9 +64,9 @@ async function startClipboardMonitoring() {
     console.error('Clipboard monitoring error:', error);
   }
   
-  // Continue monitoring
+  // Continue monitoring with faster polling
   if (isMonitoring) {
-    setTimeout(startClipboardMonitoring, 1000); // Check every second
+    setTimeout(startClipboardMonitoring, 500); // Check every 500ms for faster response
   }
 }
 

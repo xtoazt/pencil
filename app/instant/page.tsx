@@ -290,12 +290,29 @@ export default function InstantModePage() {
                             <Badge variant="outline" className="text-xs">
                               {response.model}
                             </Badge>
+                            {response.alternatives && response.alternatives.length > 0 && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                {response.alternatives.length} alternatives
+                              </Badge>
+                            )}
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {new Date(response.timestamp).toLocaleTimeString()}
                           </span>
                         </div>
-                        <p className="text-sm">{response.content}</p>
+                        <p className="text-sm mb-2">{response.content}</p>
+                        
+                        {/* Show alternatives if available */}
+                        {response.alternatives && response.alternatives.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            <p className="text-xs text-muted-foreground font-medium">Alternative responses:</p>
+                            {response.alternatives.map((alt, index) => (
+                              <div key={index} className="p-2 bg-muted/30 rounded text-xs text-muted-foreground border-l-2 border-muted">
+                                {alt}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

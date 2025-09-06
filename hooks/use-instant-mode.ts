@@ -19,6 +19,7 @@ interface InstantResponse {
   source: 'clipboard' | 'typing'
   processingTime: number
   model: string
+  alternatives?: string[]
 }
 
 interface UseInstantModeReturn {
@@ -84,13 +85,17 @@ export function useInstantMode(): UseInstantModeReturn {
     }
   }, [])
 
-  // Monitor clipboard changes
+  // Monitor clipboard changes with improved detection
   const monitorClipboard = useCallback(async () => {
     if (!hasPermission || !settings.clipboardEnabled) return
 
     try {
       const text = await navigator.clipboard.readText()
-      if (text && text !== lastClipboardRef.current && text.length <= settings.maxClipboardLength) {
+      if (text && 
+          text !== lastClipboardRef.current && 
+          text.length <= settings.maxClipboardLength &&
+          text.length > 3 && // Only process meaningful content
+          text.trim() !== '') {
         lastClipboardRef.current = text
         setCurrentClipboard(text)
         
@@ -100,6 +105,10 @@ export function useInstantMode(): UseInstantModeReturn {
       }
     } catch (error) {
       console.error('Failed to read clipboard:', error)
+      // Try to re-request permission if it fails
+      if (error.name === 'NotAllowedError') {
+        setHasPermission(false)
+      }
     }
   }, [hasPermission, settings.clipboardEnabled, settings.autoProcess, settings.maxClipboardLength, isActive])
 
@@ -152,7 +161,8 @@ export function useInstantMode(): UseInstantModeReturn {
           timestamp: Date.now(),
           source,
           processingTime: data.processingTime || processingTime,
-          model: data.model || "gemini-1.5-flash"
+          model: data.model || "gemini-1.5-flash-multi",
+          alternatives: data.alternatives || []
         }
 
         setResponses(prev => [newResponse, ...prev.slice(0, 9)]) // Keep last 10 responses
@@ -216,9 +226,9 @@ export function useInstantMode(): UseInstantModeReturn {
 
       setIsActive(true)
       
-      // Start clipboard monitoring
+      // Start clipboard monitoring with faster polling
       if (settings.clipboardEnabled) {
-        clipboardIntervalRef.current = setInterval(monitorClipboard, 1000) // Check every second
+        clipboardIntervalRef.current = setInterval(monitorClipboard, 500) // Check every 500ms for faster response
         
         // Start worker monitoring
         if (workerRef.current) {

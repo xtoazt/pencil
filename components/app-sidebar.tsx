@@ -76,6 +76,11 @@ const navigationItems = [
     url: "/instant",
     icon: Zap,
   },
+  {
+    title: "OSS Mode",
+    url: "/oss",
+    icon: Cpu,
+  },
 ]
 
 const projectItems = [
