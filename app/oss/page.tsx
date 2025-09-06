@@ -56,11 +56,14 @@ import {
   Diamond,
   Star,
   Award,
-  Trophy
+  Trophy,
+  BookOpen,
+  ExternalLink
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth-provider"
 import { useDeployments } from "@/hooks/use-deployments"
+import { useTraining } from "@/hooks/use-training"
 
 interface Deployment {
   id: string
@@ -155,6 +158,14 @@ export default function OSSModePage() {
     fetchDeploymentLogs
   } = useDeployments()
   
+  const {
+    stats: trainingStats,
+    isLoading: isTrainingLoading,
+    error: trainingError,
+    validateTraining,
+    refreshStats: refreshTrainingStats
+  } = useTraining()
+  
   const [activeTab, setActiveTab] = useState("overview")
   const [showNewDeployment, setShowNewDeployment] = useState(false)
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null)
@@ -178,6 +189,13 @@ export default function OSSModePage() {
   const handleCreateDeployment = async () => {
     if (!newDeployment.name.trim()) return
 
+    // Check training requirements first
+    const isValid = await validateTraining()
+    if (!isValid) {
+      alert(`You need at least 20 messages to deploy. You have ${trainingStats?.messageCount || 0} messages. Please chat more to train your model.`)
+      return
+    }
+
     setIsCreatingDeployment(true)
     const result = await createDeployment(newDeployment)
     
@@ -196,6 +214,8 @@ export default function OSSModePage() {
         }
       })
       setActiveTab("deployments")
+      // Refresh training stats after deployment
+      refreshTrainingStats()
     }
     setIsCreatingDeployment(false)
   }
@@ -258,10 +278,76 @@ export default function OSSModePage() {
           <h1 className="text-5xl font-bold mb-4 text-balance tracking-tight">
             Open Source Mode
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed mb-6">
             Deploy and manage your PencilGPT models with full control over your open-source AI infrastructure.
           </p>
+          <div className="flex justify-center gap-4">
+            <Link href="/oss/docs">
+              <Button variant="outline">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Documentation
+              </Button>
+            </Link>
+            <Button variant="outline">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              API Reference
+            </Button>
+          </div>
         </div>
+
+        {/* Training Progress Card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Training Progress
+            </CardTitle>
+            <CardDescription>
+              Train your PencilGPT model with at least 20 messages to enable deployment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isTrainingLoading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span>Loading training stats...</span>
+              </div>
+            ) : trainingStats ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Training Messages</span>
+                  <span className="text-sm text-muted-foreground">
+                    {trainingStats.messageCount} / 20 required
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${trainingStats.progress}%` }}
+                  ></div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={trainingStats.isReadyForDeployment ? "text-green-600" : "text-orange-600"}>
+                    {trainingStats.isReadyForDeployment 
+                      ? "✅ Ready for deployment!" 
+                      : `${trainingStats.remainingMessages} more messages needed`
+                    }
+                  </span>
+                  <span className="text-muted-foreground">
+                    {trainingStats.conversationCount} conversations
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
+                <p className="text-sm text-muted-foreground">
+                  {trainingError || "Failed to load training stats"}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Stats Cards */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
