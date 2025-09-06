@@ -38,12 +38,15 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
 
   useEffect(() => {
     if (isProcessing) {
+      // More accurate progress animation with faster updates
       const interval = setInterval(() => {
         setAnimatedProgress(prev => {
-          if (prev >= overallProgress) return overallProgress
-          return prev + Math.random() * 5
+          const diff = overallProgress - prev
+          if (diff <= 0) return overallProgress
+          // Faster, more realistic progress increments
+          return prev + Math.min(diff * 0.3 + Math.random() * 2, diff)
         })
-      }, 100)
+      }, 50) // Faster updates every 50ms
       return () => clearInterval(interval)
     } else {
       setAnimatedProgress(overallProgress)

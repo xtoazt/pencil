@@ -166,7 +166,7 @@ export default function InstantModePage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Clipboard className="h-4 w-4" />
-                    <span className="text-sm">Clipboard</span>
+                    <span className="text-sm">Clipboard (MANDATORY)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {hasPermission ? (
@@ -174,11 +174,9 @@ export default function InstantModePage() {
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                     )}
-                    <Switch
-                      checked={settings.clipboardEnabled}
-                      onCheckedChange={(checked) => updateSettings({ clipboardEnabled: checked })}
-                      disabled={isActive}
-                    />
+                    <Badge variant="default" className="bg-green-600">
+                      Always On
+                    </Badge>
                   </div>
                 </div>
 
@@ -215,12 +213,23 @@ export default function InstantModePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Current Clipboard Content</Label>
+                  <Label>Current Clipboard Content (Ultra-Fast Monitoring)</Label>
                   <div className="p-3 bg-muted rounded border min-h-20 max-h-32 overflow-auto">
                     {currentClipboard ? (
-                      <p className="text-sm">{currentClipboard}</p>
+                      <div>
+                        <p className="text-sm font-medium mb-1">📋 Clipboard Content:</p>
+                        <p className="text-sm">{currentClipboard}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Length: {currentClipboard.length} characters • Last updated: {new Date().toLocaleTimeString()}
+                        </p>
+                      </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No clipboard content detected</p>
+                      <div>
+                        <p className="text-sm text-muted-foreground">No clipboard content detected</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Copy something to see it here instantly (200ms polling)
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

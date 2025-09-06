@@ -92,7 +92,7 @@ export async function geminiInstantCompletion(content: string): Promise<{
   const promises = keysToUse.map(async (apiKey, index) => {
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000)
+      const timeoutId = setTimeout(() => controller.abort(), 2000) // Ultra-fast 2 second timeout
       
       const response = await fetch(`${GEMINI_BASE_URL}?key=${apiKey}`, {
         method: "POST",
@@ -106,10 +106,10 @@ export async function geminiInstantCompletion(content: string): Promise<{
             }]
           }],
           generationConfig: {
-            temperature: 0.3 + (index * 0.1), // Vary temperature for different perspectives
-            maxOutputTokens: 120,
-            topP: 0.8,
-            topK: 10
+            temperature: 0.2 + (index * 0.05), // Lower temperature for faster responses
+            maxOutputTokens: 80, // Shorter responses for speed
+            topP: 0.7,
+            topK: 8
           }
         }),
         signal: controller.signal,

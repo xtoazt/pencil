@@ -85,9 +85,13 @@ export function useInstantMode(): UseInstantModeReturn {
     }
   }, [])
 
-  // Monitor clipboard changes with improved detection
+  // Monitor clipboard changes with improved detection - MANDATORY
   const monitorClipboard = useCallback(async () => {
-    if (!hasPermission || !settings.clipboardEnabled) return
+    if (!hasPermission) {
+      // Always try to get permission if we don't have it
+      await requestClipboardPermission()
+      return
+    }
 
     try {
       const text = await navigator.clipboard.readText()
@@ -99,7 +103,8 @@ export function useInstantMode(): UseInstantModeReturn {
         lastClipboardRef.current = text
         setCurrentClipboard(text)
         
-        if (settings.autoProcess && isActive) {
+        // Always process clipboard content when Instant Mode is active
+        if (isActive) {
           await processInstantRequest(text, 'clipboard')
         }
       }
@@ -108,9 +113,11 @@ export function useInstantMode(): UseInstantModeReturn {
       // Try to re-request permission if it fails
       if (error.name === 'NotAllowedError') {
         setHasPermission(false)
+        // Automatically request permission again
+        setTimeout(() => requestClipboardPermission(), 1000)
       }
     }
-  }, [hasPermission, settings.clipboardEnabled, settings.autoProcess, settings.maxClipboardLength, isActive])
+  }, [hasPermission, settings.maxClipboardLength, isActive, requestClipboardPermission])
 
   // Handle typing changes
   const handleTypingChange = useCallback((text: string) => {
@@ -226,9 +233,8 @@ export function useInstantMode(): UseInstantModeReturn {
 
       setIsActive(true)
       
-      // Start clipboard monitoring with faster polling
-      if (settings.clipboardEnabled) {
-        clipboardIntervalRef.current = setInterval(monitorClipboard, 500) // Check every 500ms for faster response
+      // Start clipboard monitoring with ultra-fast polling - ALWAYS ENABLED
+      clipboardIntervalRef.current = setInterval(monitorClipboard, 200) // Check every 200ms for ultra-fast response
         
         // Start worker monitoring
         if (workerRef.current) {

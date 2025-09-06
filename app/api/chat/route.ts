@@ -46,23 +46,35 @@ export async function POST(request: NextRequest) {
         // Image generation mode with fallback
         try {
           const { generateImageWithFallback } = await import("@/lib/fal-ai")
-          response = await generateImageWithFallback(message, width, height)
-          if (response.url) {
+          response = await generateImageWithFallback(message, width || 512, height || 512)
+          if (response && response.url) {
             return NextResponse.json({
               response: response,
               type: "image",
             })
+          } else {
+            throw new Error("No valid image URL returned")
           }
         } catch (error) {
           console.error("Image generation failed:", error)
-          // Fallback to original method
-          response = await generateImage(message, width, height)
-          if (response.url) {
-            return NextResponse.json({
-              response: response,
-              type: "image",
-            })
+          // Fallback to LLM7 image generation
+          try {
+            response = await generateImage(message, width || 512, height || 512)
+            if (response && response.url) {
+              return NextResponse.json({
+                response: response,
+                type: "image",
+              })
+            }
+          } catch (fallbackError) {
+            console.error("Fallback image generation failed:", fallbackError)
           }
+          
+          // Return error if both methods fail
+          return NextResponse.json({
+            error: "Image generation failed",
+            details: error.message
+          }, { status: 500 })
         }
         break
 
