@@ -308,10 +308,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [docs.pencil-ai.com](https://docs.pencil-ai.com)
-- **Issues**: [GitHub Issues](https://github.com/xtoazt/pencil/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/xtoazt/pencil/discussions)
-- **Email**: support@pencil-ai.com
+- **Documentation**: [pencilx.vercel.app/docs](https://pencilx.vercel.app/docs)
 
 ## 🔮 Roadmap
 
@@ -334,6 +331,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by the Pencil AI Team**
+**Built by xtoazt (rohan)**
 
 *Empowering developers with the future of AI-assisted development.*
