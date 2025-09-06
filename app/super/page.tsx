@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Brain, Loader2, CheckCircle, XCircle, Clock, Cpu, Zap, Settings, Maximize2, Minimize2, Eye, EyeOff, Download, Copy, RefreshCw, BarChart3, Target, Lightbulb, Layers, Sparkles, TrendingUp, Activity, AlertTriangle, Info, Star, Award, Trophy, Crown, Gem, Diamond } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
-import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
+import { getAvailableModels, getModelsByCategory, getRecommendedModel, getSuperModeModels, getSuperModeConfig, SUPER_POWER_LEVELS } from "@/lib/llm7"
+import { ModelPerformance, useModelPerformance } from "@/components/model-performance"
 
 interface ProcessingStep {
   step: number
@@ -114,6 +115,21 @@ export default function SuperModePage() {
   const [processingTime, setProcessingTime] = useState(0)
   const [totalTokens, setTotalTokens] = useState(0)
   const [superModeHistory, setSuperModeHistory] = useState([])
+  const [powerLevel, setPowerLevel] = useState(5)
+  const [dailyUsage, setDailyUsage] = useState(0)
+  const [usageLimit, setUsageLimit] = useState(10000)
+  const [showPowerSelector, setShowPowerSelector] = useState(false)
+  
+  const {
+    models: performanceModels,
+    overallProgress,
+    isProcessing: isModelProcessing,
+    addModel,
+    updateModelStatus,
+    startProcessing,
+    completeProcessing,
+    resetModels
+  } = useModelPerformance()
 
   useEffect(() => {
     setAvailableModels(getAvailableModels())
@@ -131,6 +147,21 @@ export default function SuperModePage() {
     setProcessingTime(0)
     setTotalTokens(0)
 
+    // Check usage limit
+    if (dailyUsage >= usageLimit) {
+      setError(`Daily Super Mode limit reached (${usageLimit} messages). Please try again tomorrow.`)
+      setIsLoading(false)
+      return
+    }
+
+    // Reset and setup model performance tracking
+    resetModels()
+    const modelsToUse = getSuperModeModels(powerLevel)
+    modelsToUse.forEach(modelId => {
+      addModel(modelId, modelId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+    })
+    startProcessing(modelsToUse)
+
     const startTime = Date.now()
 
     try {
@@ -146,20 +177,24 @@ export default function SuperModePage() {
       })
 
       const data = await response.json()
-      if (data.response) {
-        setResponseContent(data.response.content)
-        setProcessingSteps(data.response.processingSteps || [])
-        setModelUsage(data.response.modelUsage || [])
-        setOverallConfidence(data.response.confidence * 100)
+      if (data.content) {
+        setResponseContent(data.content)
+        setProcessingSteps(data.processingSteps || [])
+        setModelUsage(data.modelUsage || [])
+        setOverallConfidence((data.confidence || 0.85) * 100)
         setProcessingTime(Date.now() - startTime)
-        setTotalTokens(data.response.modelUsage?.reduce((acc: number, usage: ModelUsage) => acc + usage.tokens, 0) || 0)
+        setTotalTokens(data.modelUsage?.reduce((acc: number, usage: ModelUsage) => acc + usage.tokens, 0) || 0)
+        
+        // Update daily usage
+        setDailyUsage(prev => prev + 1)
         
         setSuperModeHistory(prev => [...prev, {
           id: Date.now(),
           prompt,
-          result: data.response,
+          result: data,
           timestamp: new Date(),
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
+          powerLevel
         }])
       }
     } catch (err: any) {
@@ -221,8 +256,19 @@ export default function SuperModePage() {
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-accent border-accent">
               <Crown className="h-3 w-3 mr-1" />
-              Advanced AI
+              Power Level {powerLevel}
             </Badge>
+            <Badge variant="outline" className="text-muted-foreground">
+              <Zap className="h-3 w-3 mr-1" />
+              {dailyUsage}/{usageLimit} today
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPowerSelector(!showPowerSelector)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -233,8 +279,72 @@ export default function SuperModePage() {
           </div>
         </div>
 
+        {/* Power Level Selector */}
+        {showPowerSelector && (
+          <Card className="card-minimal">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Super Mode Power Level
+              </CardTitle>
+              <CardDescription>
+                Choose your power level (1-10) to control speed vs quality
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Power Level: {powerLevel} - {getSuperModeConfig(powerLevel).name}</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={powerLevel}
+                    onChange={(e) => setPowerLevel(parseInt(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium">{powerLevel}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {getSuperModeConfig(powerLevel).description}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Models Used:</Label>
+                  <div className="flex flex-wrap gap-1">
+                    {getSuperModeModels(powerLevel).map((model, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {model.replace(/-/g, ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Performance:</Label>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span>Speed:</span>
+                      <span className="capitalize">{getSuperModeConfig(powerLevel).speed}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Quality:</span>
+                      <span className="capitalize">{getSuperModeConfig(powerLevel).quality}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Max Tokens:</span>
+                      <span>{getSuperModeConfig(powerLevel).tokens}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               Generate
@@ -242,6 +352,10 @@ export default function SuperModePage() {
             <TabsTrigger value="presets" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               Presets
+            </TabsTrigger>
+            <TabsTrigger value="oss" className="flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              OSS
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -322,6 +436,15 @@ export default function SuperModePage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Model Performance Visualization */}
+              {(isLoading || performanceModels.length > 0) && (
+                <ModelPerformance 
+                  models={performanceModels}
+                  overallProgress={overallProgress}
+                  isProcessing={isModelProcessing}
+                />
+              )}
 
               {/* Processing Steps */}
               {isLoading && processingSteps.length > 0 && (
@@ -469,6 +592,144 @@ export default function SuperModePage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="oss" className="space-y-6">
+            <div className="grid gap-6">
+              {/* OSS Training Header */}
+              <Card className="card-minimal">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5" />
+                    Open Source Model Training
+                  </CardTitle>
+                  <CardDescription>
+                    Train your own lightweight AI models using open source frameworks
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 border border-border rounded">
+                      <div className="text-2xl mb-2">🤖</div>
+                      <h3 className="font-semibold">Custom Models</h3>
+                      <p className="text-sm text-muted-foreground">Train models on your data</p>
+                    </div>
+                    <div className="text-center p-4 border border-border rounded">
+                      <div className="text-2xl mb-2">⚡</div>
+                      <h3 className="font-semibold">Lightweight</h3>
+                      <p className="text-sm text-muted-foreground">Optimized for speed and efficiency</p>
+                    </div>
+                    <div className="text-center p-4 border border-border rounded">
+                      <div className="text-2xl mb-2">🔓</div>
+                      <h3 className="font-semibold">Open Source</h3>
+                      <p className="text-sm text-muted-foreground">Fully transparent and customizable</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Training Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="card-minimal">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      Fine-tune Existing Models
+                    </CardTitle>
+                    <CardDescription>
+                      Adapt pre-trained models to your specific use case
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 border border-border rounded">
+                        <div>
+                          <h4 className="font-medium">GPT-2 Small</h4>
+                          <p className="text-sm text-muted-foreground">117M parameters</p>
+                        </div>
+                        <Button size="sm" variant="outline">Select</Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border border-border rounded">
+                        <div>
+                          <h4 className="font-medium">DistilBERT</h4>
+                          <p className="text-sm text-muted-foreground">66M parameters</p>
+                        </div>
+                        <Button size="sm" variant="outline">Select</Button>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border border-border rounded">
+                        <div>
+                          <h4 className="font-medium">T5 Small</h4>
+                          <p className="text-sm text-muted-foreground">60M parameters</p>
+                        </div>
+                        <Button size="sm" variant="outline">Select</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="card-minimal">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5" />
+                      Training Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Configure your training parameters
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm">Training Data</Label>
+                        <div className="mt-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Dataset
+                          </Button>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Epochs</Label>
+                        <Input type="number" placeholder="10" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Learning Rate</Label>
+                        <Input type="number" placeholder="0.001" step="0.0001" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Batch Size</Label>
+                        <Input type="number" placeholder="32" className="mt-1" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Training Status */}
+              <Card className="card-minimal">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Training Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-4">🚀</div>
+                      <h3 className="text-lg font-semibold mb-2">Ready to Train</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Upload your dataset and start training your custom model
+                      </p>
+                      <Button className="button-minimal bg-accent hover:bg-accent/90 text-accent-foreground">
+                        <Crown className="h-4 w-4 mr-2" />
+                        Start Training
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 

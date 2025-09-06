@@ -149,6 +149,100 @@ function getModelDescription(model: string): string {
   return description
 }
 
+// Super Mode Power Levels (1-10)
+export const SUPER_POWER_LEVELS = {
+  1: {
+    name: "Lightning Fast",
+    description: "Ultra-fast responses with basic models",
+    models: ["nova-fast", "ministral-3b", "gpt-o4-mini"],
+    speed: "very-fast",
+    quality: "good",
+    tokens: 500,
+    dailyLimit: 10000
+  },
+  2: {
+    name: "Quick",
+    description: "Fast responses with efficient models",
+    models: ["ministral-8b", "mistral-small-2503", "nova-fast"],
+    speed: "fast",
+    quality: "good",
+    tokens: 750,
+    dailyLimit: 10000
+  },
+  3: {
+    name: "Balanced",
+    description: "Good balance of speed and quality",
+    models: ["mistral-medium", "gpt-4o-mini", "ministral-8b"],
+    speed: "fast",
+    quality: "high",
+    tokens: 1000,
+    dailyLimit: 10000
+  },
+  4: {
+    name: "Enhanced",
+    description: "Better quality with moderate speed",
+    models: ["mistral-large-2402", "gpt-4.1-nano", "mistral-medium"],
+    speed: "medium",
+    quality: "high",
+    tokens: 1250,
+    dailyLimit: 10000
+  },
+  5: {
+    name: "Advanced",
+    description: "High quality with specialized models",
+    models: ["mistral-large-2407", "deepseek-r1", "codestral-2501"],
+    speed: "medium",
+    quality: "very-high",
+    tokens: 1500,
+    dailyLimit: 10000
+  },
+  6: {
+    name: "Expert",
+    description: "Expert-level analysis and reasoning",
+    models: ["mistral-large-2411", "deepseek-r1", "pixtral-large"],
+    speed: "medium",
+    quality: "very-high",
+    tokens: 1750,
+    dailyLimit: 10000
+  },
+  7: {
+    name: "Master",
+    description: "Master-level intelligence with multimodal",
+    models: ["mistral-large-2411", "deepseek-r1", "pixtral-large", "bidara"],
+    speed: "slow",
+    quality: "excellent",
+    tokens: 2000,
+    dailyLimit: 10000
+  },
+  8: {
+    name: "Elite",
+    description: "Elite performance with advanced reasoning",
+    models: ["mistral-large-2411", "deepseek-r1", "pixtral-large", "mirexa"],
+    speed: "slow",
+    quality: "excellent",
+    tokens: 2250,
+    dailyLimit: 10000
+  },
+  9: {
+    name: "Ultimate",
+    description: "Ultimate intelligence with all capabilities",
+    models: ["mistral-large-2411", "deepseek-r1", "pixtral-large", "mirexa", "open-mixtral-8x22b"],
+    speed: "very-slow",
+    quality: "exceptional",
+    tokens: 2500,
+    dailyLimit: 10000
+  },
+  10: {
+    name: "Transcendent",
+    description: "Transcendent AI with maximum power",
+    models: ["mistral-large-2411", "deepseek-r1", "pixtral-large", "mirexa", "open-mixtral-8x22b", "gemini"],
+    speed: "very-slow",
+    quality: "transcendent",
+    tokens: 3000,
+    dailyLimit: 10000
+  }
+}
+
 // Get recommended model for task
 export function getRecommendedModel(task: string): string {
   const taskLower = task.toLowerCase()
@@ -170,6 +264,16 @@ export function getRecommendedModel(task: string): string {
   }
   
   return "mistral-large-2411" // Default to high-quality model
+}
+
+// Get models for Super Mode power level
+export function getSuperModeModels(powerLevel: number): string[] {
+  return SUPER_POWER_LEVELS[powerLevel as keyof typeof SUPER_POWER_LEVELS]?.models || SUPER_POWER_LEVELS[5].models
+}
+
+// Get Super Mode configuration
+export function getSuperModeConfig(powerLevel: number) {
+  return SUPER_POWER_LEVELS[powerLevel as keyof typeof SUPER_POWER_LEVELS] || SUPER_POWER_LEVELS[5]
 }
 
 export interface PollinationsResponse {

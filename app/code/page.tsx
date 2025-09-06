@@ -427,12 +427,57 @@ export default function CodeStudioPage() {
                   {previewMode && generatedCode ? (
                     <div className="space-y-4">
                       <div className="bg-muted p-4 rounded min-h-48">
-                        <div className="text-sm text-muted-foreground mb-2">Preview:</div>
+                        <div className="text-sm text-muted-foreground mb-2">Live Preview:</div>
                         <div className="text-sm">
                           {selectedLanguage === 'html' ? (
-                            <div dangerouslySetInnerHTML={{ __html: generatedCode }} />
+                            <iframe
+                              srcDoc={generatedCode}
+                              className="w-full h-64 border border-border rounded"
+                              sandbox="allow-scripts allow-same-origin"
+                              title="Code Preview"
+                            />
+                          ) : selectedLanguage === 'javascript' ? (
+                            <div className="space-y-2">
+                              <div className="text-xs text-muted-foreground">JavaScript Output:</div>
+                              <div className="bg-background p-2 rounded border">
+                                <iframe
+                                  srcDoc={`
+                                    <!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                      <title>JS Preview</title>
+                                      <style>
+                                        body { font-family: monospace; padding: 10px; }
+                                        .output { background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0; }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="output" id="output"></div>
+                                      <script>
+                                        try {
+                                          const result = eval(\`${generatedCode.replace(/`/g, '\\`')}\`);
+                                          document.getElementById('output').innerHTML = '<strong>Result:</strong> ' + JSON.stringify(result, null, 2);
+                                        } catch (error) {
+                                          document.getElementById('output').innerHTML = '<strong>Error:</strong> ' + error.message;
+                                        }
+                                      </script>
+                                    </body>
+                                    </html>
+                                  `}
+                                  className="w-full h-48 border border-border rounded"
+                                  sandbox="allow-scripts allow-same-origin"
+                                  title="JavaScript Preview"
+                                />
+                              </div>
+                            </div>
+                          ) : selectedLanguage === 'python' ? (
+                            <div className="space-y-2">
+                              <div className="text-xs text-muted-foreground">Python Code:</div>
+                              <pre className="text-xs bg-background p-2 rounded border overflow-auto max-h-48">{generatedCode}</pre>
+                              <div className="text-xs text-muted-foreground">Note: Python code cannot be executed in browser. Use a Python environment.</div>
+                            </div>
                           ) : (
-                            <pre className="text-xs">{generatedCode}</pre>
+                            <pre className="text-xs bg-background p-2 rounded border overflow-auto max-h-48">{generatedCode}</pre>
                           )}
                         </div>
                       </div>
