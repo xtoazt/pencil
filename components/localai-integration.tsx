@@ -77,7 +77,18 @@ export function LocalAIIntegration() {
   // Check LocalAI health
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${localaiUrl}/health`)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const response = await fetch(`${localaiUrl}/health`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
+      clearTimeout(timeoutId)
+      
       if (response.ok) {
         const health = await response.json()
         setHealthStatus(health)
@@ -85,7 +96,10 @@ export function LocalAIIntegration() {
         return true
       }
     } catch (error) {
-      console.log("LocalAI not running:", error)
+      // Only log if it's not a connection refused error
+      if (error.name !== 'AbortError' && !error.message.includes('ERR_CONNECTION_REFUSED')) {
+        console.log("LocalAI health check error:", error)
+      }
     }
     setIsConnected(false)
     setHealthStatus(null)

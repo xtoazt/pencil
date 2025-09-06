@@ -171,6 +171,16 @@ export function InstantModePro() {
   // Clipboard Monitoring
   const monitorClipboard = useCallback(async () => {
     try {
+      // Check if document is focused before accessing clipboard
+      if (!document.hasFocus()) {
+        return
+      }
+
+      // Check if clipboard API is available
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        return
+      }
+
       const clipboardItems = await navigator.clipboard.read()
       for (const clipboardItem of clipboardItems) {
         for (const type of clipboardItem.types) {
@@ -194,8 +204,11 @@ export function InstantModePro() {
           }
         }
       }
-    } catch (error) {
-      console.log('Clipboard access denied or error:', error)
+    } catch (error: any) {
+      // Only log if it's not a permission error
+      if (!error.message.includes('NotAllowedError') && !error.message.includes('Document is not focused')) {
+        console.log('Clipboard access error:', error)
+      }
     }
   }, [clipboardData, isActive, processInstantRequest])
 

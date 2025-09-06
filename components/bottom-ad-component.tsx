@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect } from "react"
 
-interface AdComponentProps {
+interface BottomAdComponentProps {
   className?: string
   style?: React.CSSProperties
 }
 
-export function AdComponent({ className = "", style }: AdComponentProps) {
+export function BottomAdComponent({ className = "", style }: BottomAdComponentProps) {
   useEffect(() => {
     // Check if AdSense script is already loaded
     if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
@@ -44,9 +44,9 @@ export function AdComponent({ className = "", style }: AdComponentProps) {
     <div className={`ad-container ${className}`} style={style}>
       <ins 
         className="adsbygoogle"
-        style={{ display: 'inline-block', width: '300px', height: '250px' }}
+        style={{ display: 'inline-block', width: '350px', height: '90px' }}
         data-ad-client="ca-pub-2612092132708362"
-        data-ad-slot="1915451273"
+        data-ad-slot="6302538402"
         data-ad-format="auto"
         data-full-width-responsive="true"
       />
@@ -54,8 +54,8 @@ export function AdComponent({ className = "", style }: AdComponentProps) {
   )
 }
 
-// Terminal-styled ad component
-export function TerminalAdComponent({ className = "", style }: AdComponentProps) {
+// Terminal-styled bottom ad component
+export function TerminalBottomAdComponent({ className = "", style }: BottomAdComponentProps) {
   return (
     <div className={`terminal-window ${className}`} style={style}>
       <div className="terminal-header">
@@ -67,7 +67,7 @@ export function TerminalAdComponent({ className = "", style }: AdComponentProps)
         </div>
       </div>
       <div className="terminal-content flex items-center justify-center p-4">
-        <AdComponent />
+        <BottomAdComponent />
       </div>
     </div>
   )

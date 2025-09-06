@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { getAvailableModels } from "@/lib/llm7"
 import { TerminalAdComponent } from "@/components/ad-component"
+import { TerminalBottomAdComponent } from "@/components/bottom-ad-component"
 import {
   MessageSquare,
   Terminal,
@@ -333,6 +334,11 @@ export default function DashboardPage() {
         {/* Ad Section */}
         <div className="flex justify-center">
           <TerminalAdComponent />
+        </div>
+
+        {/* Bottom Ad Section */}
+        <div className="flex justify-center mt-8">
+          <TerminalBottomAdComponent />
         </div>
       </div>
     </AppLayout>

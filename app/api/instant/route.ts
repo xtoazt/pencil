@@ -24,8 +24,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
-    // Use Gemini for ultra-fast instant responses
-    const result = await geminiInstantCompletion(content)
+    // Use Gemini for ultra-fast instant responses with fallback
+    let result
+    try {
+      result = await geminiInstantCompletion(content)
+    } catch (geminiError: any) {
+      console.error("Gemini API failed, using fallback:", geminiError.message)
+      // Fallback response if Gemini fails
+      result = {
+        content: `I received your message: "${content}". This is a fallback response as the AI service is temporarily unavailable.`,
+        model: "fallback",
+        processingTime: 100,
+        apiKey: "fallback",
+        alternatives: []
+      }
+    }
 
     return NextResponse.json({
       content: result.content,

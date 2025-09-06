@@ -4,6 +4,7 @@ import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { ApiStatus } from "@/components/api-status"
 import { TerminalAdComponent } from "@/components/ad-component"
+import { TerminalBottomAdComponent } from "@/components/bottom-ad-component"
 import Link from "next/link"
 import { ArrowRight, MessageSquare, Code, ImageIcon, Zap, Shield, Activity } from "lucide-react"
 
@@ -185,6 +186,11 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+          </div>
+
+          {/* Bottom Ad Section */}
+          <div className="mt-16 flex justify-center animate-in fade-in duration-1200 delay-1200 slide-in-from-bottom-8">
+            <TerminalBottomAdComponent />
           </div>
         </div>
       </div>
