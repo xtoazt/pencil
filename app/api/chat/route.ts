@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { chatCompletion, generateCode, generateImage, superModeCompletion } from "@/lib/llm7"
+import { getSql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
-    const { messages, mode, language, model, width, height } = await request.json()
+    const { messages, mode, language, model, width, height, conversationId, saveToHistory = true } = await request.json()
 
     if (!messages || !mode) {
       return NextResponse.json({ error: "Messages and mode required" }, { status: 400 })
@@ -29,6 +30,19 @@ export async function POST(request: NextRequest) {
     const message = lastMessage?.content || ""
 
     let response: any
+    let conversationIdToUse = conversationId
+
+    // Create conversation if it doesn't exist and we want to save
+    if (saveToHistory && !conversationIdToUse) {
+      const sql = getSql()
+      const title = message.length > 50 ? message.substring(0, 50) + "..." : message
+      const result = await sql`
+        INSERT INTO conversations (user_id, title, mode)
+        VALUES (${decoded.userId}, ${title}, ${mode})
+        RETURNING id
+      `
+      conversationIdToUse = result[0].id
+    }
 
     switch (mode) {
       case "chat":
@@ -90,10 +104,58 @@ export async function POST(request: NextRequest) {
           confidence: superResult.confidence,
           alternatives: superResult.alternatives,
           imageUrl: superResult.type === "image" ? superResult.content : undefined,
+          conversationId: conversationIdToUse
         })
 
       default:
         return NextResponse.json({ error: "Invalid mode" }, { status: 400 })
+    }
+
+    // Save messages to database if conversation exists
+    if (saveToHistory && conversationIdToUse && response) {
+      try {
+        const sql = getSql()
+        
+        // Save user message
+        await sql`
+          INSERT INTO messages (conversation_id, role, content, metadata)
+          VALUES (${conversationIdToUse}, 'user', ${message}, ${JSON.stringify({ model, mode })})
+        `
+        
+        // Save assistant response
+        let responseContent = ""
+        if (response.choices && response.choices[0]) {
+          responseContent = response.choices[0].message.content
+        } else if (typeof response === 'string') {
+          responseContent = response
+        } else if (response.content) {
+          responseContent = response.content
+        } else if (response.response) {
+          responseContent = response.response
+        } else {
+          responseContent = JSON.stringify(response)
+        }
+        
+        await sql`
+          INSERT INTO messages (conversation_id, role, content, metadata)
+          VALUES (${conversationIdToUse}, 'assistant', ${responseContent}, ${JSON.stringify({ 
+            model: response.model || model || 'default', 
+            mode, 
+            tokens: response.usage?.total_tokens || response.tokens || 0,
+            processingTime: response.processingTime || 0
+          })})
+        `
+        
+        // Update conversation timestamp
+        await sql`
+          UPDATE conversations 
+          SET updated_at = NOW() 
+          WHERE id = ${conversationIdToUse}
+        `
+      } catch (error) {
+        console.error("Error saving messages:", error)
+        // Don't fail the request if saving fails
+      }
     }
 
     // Handle standard chat and code responses
@@ -102,7 +164,8 @@ export async function POST(request: NextRequest) {
         response: response.choices[0].message.content,
         type: mode,
         tokens: response.usage?.total_tokens || 0,
-        model: response.model || model
+        model: response.model || model,
+        conversationId: conversationIdToUse
       })
     }
 

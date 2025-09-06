@@ -125,8 +125,9 @@ const mockHistory: HistoryItem[] = [
 
 export default function HistoryPage() {
   const { user } = useAuth()
-  const [history, setHistory] = useState<HistoryItem[]>(mockHistory)
-  const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>(mockHistory)
+  const [history, setHistory] = useState<HistoryItem[]>([])
+  const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedType, setSelectedType] = useState("all")
   const [selectedModel, setSelectedModel] = useState("all")
@@ -137,8 +138,43 @@ export default function HistoryPage() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
+    if (user) {
+      fetchConversationHistory()
+    }
+  }, [user])
+
+  useEffect(() => {
     filterHistory()
   }, [searchQuery, selectedType, selectedModel, sortBy, sortOrder, history])
+
+  const fetchConversationHistory = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/conversations')
+      if (response.ok) {
+        const data = await response.json()
+        // Convert conversations to history items
+        const historyItems: HistoryItem[] = data.conversations.map((conv: any) => ({
+          id: conv.id,
+          type: conv.mode as "chat" | "code" | "image" | "super",
+          title: conv.title,
+          content: conv.title, // Use title as content for now
+          model: "default", // We'll need to get this from messages
+          tokens: 0, // We'll need to calculate this
+          timestamp: new Date(conv.updated_at),
+          duration: 0, // We'll need to calculate this
+          favorite: false,
+          archived: false,
+          tags: []
+        }))
+        setHistory(historyItems)
+      }
+    } catch (error) {
+      console.error('Error fetching conversation history:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filterHistory = () => {
     let filtered = [...history]

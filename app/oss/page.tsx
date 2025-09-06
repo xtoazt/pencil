@@ -83,7 +83,7 @@ interface Deployment {
 }
 
 const frameworks = [
-  { value: "react", label: "React", icon: "⚛️", description: "Modern React with TypeScript" },
+  { value: "react", label: "React", icon: "⚛️", description: "A JavaScript library for building user interfaces" },
   { value: "nextjs", label: "Next.js", icon: "▲", description: "Full-stack React framework" },
   { value: "vue", label: "Vue.js", icon: "💚", description: "Progressive JavaScript framework" },
   { value: "angular", label: "Angular", icon: "🅰️", description: "Platform for building mobile and desktop web applications" },

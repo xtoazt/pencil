@@ -80,6 +80,7 @@ export default function ChatPage() {
   const [showModelInfo, setShowModelInfo] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const [conversationHistory, setConversationHistory] = useState([])
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -121,7 +122,9 @@ export default function ChatPage() {
             { role: "user", content: inputMessage }
           ],
           mode: "chat",
-          model: selectedModel
+          model: selectedModel,
+          conversationId: currentConversationId,
+          saveToHistory: true
         }),
       })
 
@@ -136,6 +139,11 @@ export default function ChatPage() {
           tokens: data.tokens
         }
         setMessages(prev => [...prev, assistantMessage])
+        
+        // Set conversation ID if this is a new conversation
+        if (data.conversationId && !currentConversationId) {
+          setCurrentConversationId(data.conversationId)
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error)
@@ -154,6 +162,7 @@ export default function ChatPage() {
 
   const clearChat = () => {
     setMessages([])
+    setCurrentConversationId(null)
   }
 
   const exportChat = () => {

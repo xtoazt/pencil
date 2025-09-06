@@ -222,13 +222,11 @@ export function useInstantMode(): UseInstantModeReturn {
   // Start/stop monitoring
   const toggleInstantMode = useCallback(async () => {
     if (!isActive) {
-      // Starting instant mode
-      if (settings.clipboardEnabled) {
-        const permissionGranted = await requestClipboardPermission()
-        if (!permissionGranted) {
-          alert("Clipboard permission is required for Instant Mode. Please allow clipboard access.")
-          return
-        }
+      // Starting instant mode - clipboard is mandatory
+      const permissionGranted = await requestClipboardPermission()
+      if (!permissionGranted) {
+        alert("Clipboard permission is required for Instant Mode. Please allow clipboard access.")
+        return
       }
 
       setIsActive(true)

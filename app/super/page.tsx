@@ -91,7 +91,7 @@ const superModePresets = [
     title: "Content Strategy",
     description: "Comprehensive content planning",
     prompt: "Develop a complete content strategy for [brand/product] including audience analysis and content recommendations.",
-    models: ["mistral-large-2411", "gpt-4.1-nano", "mistral-medium"],
+    models: ["mistral-large-2411", "gpt-4.1-nano", "deepseek-r1"],
     icon: "📝",
     category: "creative"
   }
