@@ -2,8 +2,9 @@
 
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
+import { ApiStatus } from "@/components/api-status"
 import Link from "next/link"
-import { ArrowRight, MessageSquare, Code, ImageIcon, Zap } from "lucide-react"
+import { ArrowRight, MessageSquare, Code, ImageIcon, Zap, Shield, Activity } from "lucide-react"
 
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -49,10 +50,15 @@ export default function HomePage() {
           <h1 className="text-6xl font-medium mb-6 text-balance tracking-tight animate-in fade-in duration-1200 slide-in-from-bottom-12">
             Pencil AI
           </h1>
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto text-pretty leading-relaxed animate-in fade-in duration-1200 delay-300 slide-in-from-bottom-8">
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto text-pretty leading-relaxed animate-in fade-in duration-1200 delay-300 slide-in-from-bottom-8">
             The AI development platform that combines intelligent chat, code generation, image creation, and our
-            revolutionary Super Mode.
+            revolutionary Super Mode with intelligent API rotation for maximum reliability.
           </p>
+
+          {/* API Status Component */}
+          <div className="max-w-2xl mx-auto mb-12 animate-in fade-in duration-1200 delay-400 slide-in-from-bottom-6">
+            <ApiStatus />
+          </div>
 
           <div className="flex gap-3 justify-center mb-20 animate-in fade-in duration-1200 delay-600 slide-in-from-bottom-6">
             <Link href="/signup">
@@ -118,6 +124,59 @@ export default function HomePage() {
               <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
                 Revolutionary multi-model AI for enhanced responses
               </p>
+            </div>
+          </div>
+
+          {/* Advanced Features Section */}
+          <div className="mt-24 max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-medium mb-4">Advanced Infrastructure</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Built with enterprise-grade reliability and intelligent systems
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="text-center group animate-in fade-in duration-1200 delay-1100 slide-in-from-bottom-8">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
+                  <Shield className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+                </div>
+                <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+                  API Rotation System
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
+                  Intelligent failover with 3+ API keys for 99.9% uptime
+                </p>
+              </div>
+
+            <div className="text-center group animate-in fade-in duration-1200 delay-1200 slide-in-from-bottom-8">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-muted flex items-center justify-center transition-all duration-500 group-hover:bg-accent group-hover:shadow-2xl group-hover:shadow-accent/40 group-hover:brightness-110">
+                <Activity className="h-6 w-6 transition-all duration-300 group-hover:brightness-125" />
+              </div>
+              <h3 className="font-medium mb-2 transition-all duration-300 group-hover:text-foreground group-hover:brightness-110">
+                Real-time Monitoring
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed transition-all duration-300 group-hover:text-foreground/90 group-hover:brightness-105">
+                Live performance tracking and automatic optimization
+              </p>
+            </div>
+          </div>
+
+          {/* Instant Mode Feature */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-medium mb-4">⚡ Instant Mode</h2>
+              <p className="text-muted-foreground mb-6">
+                Ultra-fast AI responses with clipboard monitoring and predictive typing
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/signup">
+                  <Button className="gap-2 h-11 px-8 transition-all duration-300 hover:gap-3 hover:shadow-2xl hover:shadow-foreground/30 hover:bg-foreground/90 group">
+                    Try Instant Mode{" "}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

@@ -22,8 +22,7 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
-    const fakeEmail = `${username}@pencil.internal`
-    const success = await login(fakeEmail, password)
+    const success = await login(username, password)
     if (!success) {
       setError("Invalid username or password")
     }

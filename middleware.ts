@@ -5,7 +5,7 @@ import { jwtVerify } from "jose"
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-change-in-production")
 
 // Protected routes that require authentication
-const protectedRoutes = ["/dashboard", "/chat", "/projects", "/history", "/settings", "/image", "/code", "/super"]
+const protectedRoutes = ["/dashboard", "/chat", "/projects", "/history", "/settings", "/image", "/code", "/super", "/profile", "/instant"]
 
 // Public routes that redirect to dashboard if authenticated
 const publicRoutes = ["/login", "/signup"]

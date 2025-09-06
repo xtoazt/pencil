@@ -41,6 +41,8 @@ import {
   Wand2,
   Palette,
   Cpu,
+  User,
+  Lightning,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -70,6 +72,11 @@ const navigationItems = [
     url: "/super",
     icon: Brain,
   },
+  {
+    title: "Instant Mode",
+    url: "/instant",
+    icon: Lightning,
+  },
 ]
 
 const projectItems = [
@@ -82,6 +89,19 @@ const projectItems = [
     title: "History",
     url: "/history",
     icon: History,
+  },
+]
+
+const accountItems = [
+  {
+    title: "Profile",
+    url: "/profile",
+    icon: User,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
   },
 ]
 
@@ -160,6 +180,25 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Account */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-bold uppercase tracking-wider">ACCOUNT</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {accountItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url} className="hover:bg-muted/50">
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span className="font-medium">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Recent Conversations */}
         {recentChats.length > 0 && (
           <SidebarGroup>
@@ -218,12 +257,18 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <span className="text-sm font-medium truncate">{user?.name || "User"}</span>
-                    <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                    <span className="text-xs text-muted-foreground truncate">@{user?.username}</span>
                   </div>
                   <ChevronUp className="ml-auto h-4 w-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings">
                     <Settings className="mr-2 h-4 w-4" />

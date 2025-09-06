@@ -1,7 +1,64 @@
-// LLM7 API Configuration
-const LLM7_API_KEY = process.env.LLM7_API_KEY || "ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQHtngi+nKTJioErxAJvk7atA677L/7QUb+OZPwRzQkqglBTSYvBXL207hrUum8EEI1XW0BmCzX7IfQ1avVWSFH8xB3bon21XDLyGTLFPu7umEJwVS5lTto="
+// LLM7 API Configuration with Rotation System
+const LLM7_API_KEYS = [
+  process.env.LLM7_API_KEY || "ZaJ9R/8kJvNBebSNCBLOuE3Z2PzgFQHtngi+nKTJioErxAJvk7atA677L/7QUb+OZPwRzQkqglBTSYvBXL207hrUum8EEI1XW0BmCzX7IfQ1avVWSFH8xB3bon21XDLyGTLFPu7umEJwVS5lTto=",
+  "MW2gDrKdBNwifnictuPXAswvJPKYNDM5b9ZoOoz8OmJkdzUeChHNGc14fTxr65/pEvcufXyTttSpbtWJR76594mWJ3HySiM8FHgTe6MxX2cIJ7J1IT5Tzf+3g+hQ",
+  "+q5EuaM7myjUFYpKesilJVm2guShRURPFzvSEnuYMcDYVaZh8TPQhK20Q0q0Bb1/01qiQ04XVpm4S629SLYJ+rEa/opR8FNiENG5NSu8ZPOcACMGfQv+s3bOcG8f"
+]
+
 const LLM7_BASE_URL = "https://api.llm7.io/v1"
 const LLM7_CHAT_URL = "https://api.llm7.io/v1/chat/completions"
+
+// API Rotation System
+let currentApiKeyIndex = 0
+let apiKeyStatus: { [key: string]: { exhausted: boolean; lastUsed: number; errorCount: number } } = {}
+
+// Get current API key with rotation
+function getCurrentApiKey(): string {
+  return LLM7_API_KEYS[currentApiKeyIndex]
+}
+
+// Rotate to next available API key
+function rotateApiKey(): string {
+  const startIndex = currentApiKeyIndex
+  
+  do {
+    currentApiKeyIndex = (currentApiKeyIndex + 1) % LLM7_API_KEYS.length
+    const currentKey = LLM7_API_KEYS[currentApiKeyIndex]
+    
+    // Check if this key is not exhausted
+    if (!apiKeyStatus[currentKey]?.exhausted) {
+      return currentKey
+    }
+  } while (currentApiKeyIndex !== startIndex)
+  
+  // If all keys are exhausted, reset status and use first key
+  console.warn("All API keys exhausted, resetting status")
+  apiKeyStatus = {}
+  currentApiKeyIndex = 0
+  return LLM7_API_KEYS[0]
+}
+
+// Mark API key as exhausted
+function markApiKeyExhausted(apiKey: string, reason: string) {
+  if (!apiKeyStatus[apiKey]) {
+    apiKeyStatus[apiKey] = { exhausted: false, lastUsed: 0, errorCount: 0 }
+  }
+  
+  apiKeyStatus[apiKey].exhausted = true
+  apiKeyStatus[apiKey].errorCount++
+  
+  console.warn(`API key exhausted: ${reason}. Rotating to next key.`)
+}
+
+// Get API status for monitoring
+export function getApiStatus() {
+  return {
+    currentKeyIndex: currentApiKeyIndex,
+    totalKeys: LLM7_API_KEYS.length,
+    keyStatus: apiKeyStatus,
+    availableKeys: LLM7_API_KEYS.filter((_, index) => !apiKeyStatus[LLM7_API_KEYS[index]]?.exhausted).length
+  }
+}
 
 // Available models on LLM7 - Complete list with all models
 export const AVAILABLE_MODELS = {
@@ -313,23 +370,28 @@ export interface ModelUsage {
   confidence: number
 }
 
-// Standard chat completion using LLM7
+// Standard chat completion using LLM7 with API rotation
 export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-nano") {
+  let attempts = 0
+  const maxAttempts = LLM7_API_KEYS.length
+  
+  while (attempts < maxAttempts) {
   try {
     // Ensure model is available on LLM7
     const llm7Model = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS] || model
+      const currentApiKey = getCurrentApiKey()
     
-    console.log("Making request to LLM7 with model:", llm7Model)
+      console.log(`Making request to LLM7 with model: ${llm7Model}, API key: ${currentApiKeyIndex + 1}/${LLM7_API_KEYS.length}`)
     console.log("Messages:", messages)
-    
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
     
     const response = await fetch(LLM7_CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${LLM7_API_KEY}`,
+          "Authorization": `Bearer ${currentApiKey}`,
       },
       body: JSON.stringify({
         model: llm7Model,
@@ -338,10 +400,10 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
         temperature: 0.7,
         max_tokens: 2000,
       }),
-      signal: controller.signal,
+        signal: controller.signal,
     })
-    
-    clearTimeout(timeoutId)
+      
+      clearTimeout(timeoutId)
 
     console.log("Response status:", response.status)
     console.log("Response headers:", Object.fromEntries(response.headers.entries()))
@@ -349,11 +411,25 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
     if (!response.ok) {
       const errorText = await response.text()
       console.error("LLM7 API error response:", errorText)
+        
+        // Check if it's a rate limit or quota exceeded error
+        if (response.status === 429 || response.status === 402 || errorText.includes("quota") || errorText.includes("limit")) {
+          markApiKeyExhausted(currentApiKey, `HTTP ${response.status}: ${errorText}`)
+          attempts++
+          continue // Try next API key
+        }
+        
       throw new Error(`LLM7 API error: ${response.status} ${response.statusText} - ${errorText}`)
     }
 
     const data = await response.json()
     console.log("LLM7 response data:", data)
+      
+      // Update API key usage
+      if (!apiKeyStatus[currentApiKey]) {
+        apiKeyStatus[currentApiKey] = { exhausted: false, lastUsed: 0, errorCount: 0 }
+      }
+      apiKeyStatus[currentApiKey].lastUsed = Date.now()
     
     // LLM7 uses standard OpenAI format
     if (data.choices && data.choices[0]) {
@@ -368,11 +444,21 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
     }
   } catch (error) {
     console.error("Chat completion error:", error)
-    if (error.name === 'AbortError') {
-      throw new Error("Request timed out after 30 seconds")
-    }
+      
+      // If it's a network error or timeout, try next API key
+      if (error.name === 'AbortError' || error.message.includes('fetch')) {
+        markApiKeyExhausted(getCurrentApiKey(), error.message)
+        attempts++
+        continue
+      }
+      
+      // For other errors, throw immediately
     throw error
   }
+  }
+  
+  // If we've exhausted all API keys
+  throw new Error("All API keys have been exhausted. Please try again later.")
 }
 
 // Code generation with specialized models
