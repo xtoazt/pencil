@@ -1,527 +1,690 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Cpu, 
-  Download, 
-  Upload, 
-  Settings, 
-  Play, 
-  Pause, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
+  Github, 
+  BookOpen, 
+  Users, 
+  Plus,
+  Play,
+  Pause,
+  Trash2,
+  ExternalLink,
   Clock,
-  Code,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertCircle,
+  Settings,
+  Monitor,
   Database,
-  Zap,
-  Brain,
-  Layers,
+  Globe,
   Terminal,
-  FileText,
-  Github,
-  GitBranch,
-  Package
+  Activity,
+  BarChart3,
+  Download,
+  Upload,
+  RefreshCw,
+  Eye,
+  Edit3,
+  Copy,
+  Share2,
+  Zap,
+  Layers,
+  Package,
+  Code,
+  Server,
+  Cloud,
+  Lock,
+  Unlock,
+  TrendingUp,
+  Target,
+  Lightbulb,
+  Sparkles,
+  Crown,
+  Gem,
+  Diamond,
+  Star,
+  Award,
+  Trophy
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useAuth } from "@/components/auth-provider"
+import { useDeployments } from "@/hooks/use-deployments"
 
-const ossFrameworks = [
-  {
-    id: "llama",
-    name: "Llama 2/3",
-    description: "Meta's open-source language models",
-    size: "7B-70B parameters",
-    icon: "🦙",
-    status: "ready"
-  },
-  {
-    id: "mistral",
-    name: "Mistral 7B",
-    description: "High-performance 7B parameter model",
-    size: "7B parameters",
-    icon: "🌪️",
-    status: "ready"
-  },
-  {
-    id: "codellama",
-    name: "Code Llama",
-    description: "Specialized for code generation",
-    size: "7B-34B parameters",
-    icon: "💻",
-    status: "ready"
-  },
-  {
-    id: "phi",
-    name: "Microsoft Phi",
-    description: "Compact and efficient models",
-    size: "1.3B-3.8B parameters",
-    icon: "Φ",
-    status: "ready"
-  },
-  {
-    id: "gemma",
-    name: "Google Gemma",
-    description: "Google's open-source models",
-    size: "2B-7B parameters",
-    icon: "💎",
-    status: "ready"
+interface Deployment {
+  id: string
+  name: string
+  description: string
+  framework: string
+  modelType: string
+  status: 'building' | 'deployed' | 'failed' | 'stopped'
+  subdomain: string
+  url: string
+  createdAt: Date
+  updatedAt: Date
+  buildLogs: string[]
+  deploymentConfig: {
+    environment: string
+    buildCommand: string
+    startCommand: string
+    port: number
   }
+}
+
+const frameworks = [
+  { value: "react", label: "React", icon: "⚛️", description: "Modern React with TypeScript" },
+  { value: "nextjs", label: "Next.js", icon: "▲", description: "Full-stack React framework" },
+  { value: "vue", label: "Vue.js", icon: "💚", description: "Progressive JavaScript framework" },
+  { value: "angular", label: "Angular", icon: "🅰️", description: "Platform for building mobile and desktop web applications" },
+  { value: "svelte", label: "Svelte", icon: "🧡", description: "Cybernetically enhanced web apps" },
+  { value: "express", label: "Express.js", icon: "🚀", description: "Fast, unopinionated web framework" },
+  { value: "fastapi", label: "FastAPI", icon: "⚡", description: "Modern Python web framework" },
+  { value: "django", label: "Django", icon: "🎸", description: "High-level Python web framework" },
+  { value: "spring", label: "Spring Boot", icon: "🍃", description: "Java-based framework" },
+  { value: "flutter", label: "Flutter", icon: "🦋", description: "UI toolkit for building natively compiled applications" }
 ]
 
-const trainingPresets = [
+const modelTypes = [
+  { value: "llm", label: "Language Model", icon: "🧠", description: "Text generation and conversation" },
+  { value: "image", label: "Image Generation", icon: "🎨", description: "AI image creation and editing" },
+  { value: "code", label: "Code Assistant", icon: "💻", description: "Code generation and analysis" },
+  { value: "audio", label: "Audio Processing", icon: "🎵", description: "Speech and audio generation" },
+  { value: "video", label: "Video Generation", icon: "🎬", description: "Video creation and editing" },
+  { value: "multimodal", label: "Multimodal", icon: "🌟", description: "Multiple input/output types" }
+]
+
+const deploymentTemplates = [
   {
-    name: "Code Assistant",
-    description: "Fine-tune for code generation and debugging",
-    framework: "codellama",
-    epochs: 3,
-    learningRate: 0.0001,
-    dataset: "code-dataset"
+    name: "PencilGPT Chat API",
+    framework: "fastapi",
+    modelType: "llm",
+    description: "REST API for PencilGPT language model",
+    template: {
+      environment: "production",
+      buildCommand: "pip install -r requirements.txt",
+      startCommand: "uvicorn main:app --host 0.0.0.0 --port 3000",
+      port: 3000
+    }
   },
   {
-    name: "Creative Writer",
-    description: "Fine-tune for creative writing and storytelling",
-    framework: "llama",
-    epochs: 5,
-    learningRate: 0.00005,
-    dataset: "creative-dataset"
+    name: "PencilGPT Web Interface",
+    framework: "nextjs",
+    modelType: "llm",
+    description: "Web interface for PencilGPT",
+    template: {
+      environment: "production",
+      buildCommand: "npm run build",
+      startCommand: "npm start",
+      port: 3000
+    }
   },
   {
-    name: "Technical Expert",
-    description: "Fine-tune for technical documentation and analysis",
-    framework: "mistral",
-    epochs: 4,
-    learningRate: 0.0001,
-    dataset: "technical-dataset"
+    name: "PencilGPT Image API",
+    framework: "express",
+    modelType: "image",
+    description: "Image generation API",
+    template: {
+      environment: "production",
+      buildCommand: "npm install",
+      startCommand: "node server.js",
+      port: 3000
+    }
   }
 ]
 
 export default function OSSModePage() {
   const { user } = useAuth()
-  const [selectedFramework, setSelectedFramework] = useState("llama")
-  const [selectedPreset, setSelectedPreset] = useState("")
-  const [isTraining, setIsTraining] = useState(false)
-  const [trainingProgress, setTrainingProgress] = useState(0)
-  const [trainingStatus, setTrainingStatus] = useState("idle")
-  const [customConfig, setCustomConfig] = useState({
-    epochs: 3,
-    learningRate: 0.0001,
-    batchSize: 4,
-    maxLength: 2048
+  const {
+    deployments,
+    stats,
+    isLoading,
+    error,
+    createDeployment,
+    stopDeployment,
+    fetchDeploymentLogs
+  } = useDeployments()
+  
+  const [activeTab, setActiveTab] = useState("overview")
+  const [showNewDeployment, setShowNewDeployment] = useState(false)
+  const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null)
+  const [deploymentLogs, setDeploymentLogs] = useState<string[]>([])
+  const [isCreatingDeployment, setIsCreatingDeployment] = useState(false)
+
+  // New deployment form state
+  const [newDeployment, setNewDeployment] = useState({
+    name: "",
+    description: "",
+    framework: "react",
+    modelType: "llm",
+    deploymentConfig: {
+      environment: "production",
+      buildCommand: "npm run build",
+      startCommand: "npm start",
+      port: 3000
+    }
   })
 
-  const handleStartTraining = async () => {
-    setIsTraining(true)
-    setTrainingStatus("preparing")
-    setTrainingProgress(0)
+  const handleCreateDeployment = async () => {
+    if (!newDeployment.name.trim()) return
 
-    // Simulate training progress
-    const interval = setInterval(() => {
-      setTrainingProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsTraining(false)
-          setTrainingStatus("completed")
-          return 100
+    setIsCreatingDeployment(true)
+    const result = await createDeployment(newDeployment)
+    
+    if (result) {
+      setShowNewDeployment(false)
+      setNewDeployment({
+        name: "",
+        description: "",
+        framework: "react",
+        modelType: "llm",
+        deploymentConfig: {
+          environment: "production",
+          buildCommand: "npm run build",
+          startCommand: "npm start",
+          port: 3000
         }
-        return prev + Math.random() * 10
       })
-    }, 1000)
+      setActiveTab("deployments")
+    }
+    setIsCreatingDeployment(false)
+  }
 
-    // Update status during training
-    setTimeout(() => setTrainingStatus("training"), 2000)
-    setTimeout(() => setTrainingStatus("optimizing"), 5000)
-    setTimeout(() => setTrainingStatus("finalizing"), 8000)
+  const handleStopDeployment = async (deploymentId: string) => {
+    await stopDeployment(deploymentId)
+  }
+
+  const handleFetchLogs = async (deploymentId: string) => {
+    const logs = await fetchDeploymentLogs(deploymentId)
+    setDeploymentLogs(logs)
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "ready": return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "training": return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />
-      case "completed": return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "error": return <XCircle className="h-4 w-4 text-red-500" />
-      default: return <Clock className="h-4 w-4 text-gray-500" />
+      case 'building':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+      case 'deployed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      case 'stopped':
+        return <Pause className="h-4 w-4 text-gray-500" />
+      default:
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />
     }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'building':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'deployed':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'failed':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'stopped':
+        return 'bg-gray-100 text-gray-800 border-gray-200'
+      default:
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    }
+  }
+
+  const getFrameworkIcon = (framework: string) => {
+    return frameworks.find(f => f.value === framework)?.icon || "📦"
+  }
+
+  const getModelTypeIcon = (modelType: string) => {
+    return modelTypes.find(m => m.value === modelType)?.icon || "🤖"
+  }
+
+  const remainingDeployments = stats?.remainingSlots || 0
+
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-12">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 bg-primary flex items-center justify-center rounded-lg">
-            <Cpu className="h-8 w-8 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">OSS Mode</h1>
-            <p className="text-muted-foreground">Train and deploy open-source AI models</p>
-          </div>
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Cpu className="h-16 w-16 text-primary mx-auto mb-6" />
+          <h1 className="text-5xl font-bold mb-4 text-balance tracking-tight">
+            Open Source Mode
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty leading-relaxed">
+            Deploy and manage your PencilGPT models with full control over your open-source AI infrastructure.
+          </p>
         </div>
 
-        <Tabs defaultValue="models" className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <Card className="text-center p-6">
+            <div className="flex items-center justify-center mb-4">
+              <Server className="h-8 w-8 text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold">{deployments.length}</div>
+            <div className="text-sm text-muted-foreground">Total Deployments</div>
+          </Card>
+          <Card className="text-center p-6">
+            <div className="flex items-center justify-center mb-4">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+            <div className="text-2xl font-bold">
+              {stats?.deployed || 0}
+            </div>
+            <div className="text-sm text-muted-foreground">Active Deployments</div>
+          </Card>
+          <Card className="text-center p-6">
+            <div className="flex items-center justify-center mb-4">
+              <Activity className="h-8 w-8 text-orange-500" />
+            </div>
+            <div className="text-2xl font-bold">
+              {stats?.building || 0}
+            </div>
+            <div className="text-sm text-muted-foreground">Building</div>
+          </Card>
+          <Card className="text-center p-6">
+            <div className="flex items-center justify-center mb-4">
+              <Target className="h-8 w-8 text-purple-500" />
+            </div>
+            <div className="text-2xl font-bold">{remainingDeployments}</div>
+            <div className="text-sm text-muted-foreground">Remaining Slots</div>
+          </Card>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="models">Models</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
-            <TabsTrigger value="deployment">Deployment</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="deployments">Deployments</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="community">Community</TabsTrigger>
           </TabsList>
 
-          {/* Models Tab */}
-          <TabsContent value="models" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ossFrameworks.map((framework) => (
-                <Card key={framework.id} className="cursor-pointer hover:shadow-lg transition-shadow">
-                  <CardHeader>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <Card className="text-center p-6 flex flex-col items-center justify-center">
+                <Github className="h-12 w-12 text-foreground mb-4" />
+                <CardTitle className="mb-2">GitHub Repository</CardTitle>
+                <CardDescription className="mb-4">
+                  Access the full source code and contribute to the project.
+                </CardDescription>
+                <Link href="https://github.com/xtoazt/pencil" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="gap-2">
+                    <Github className="h-4 w-4" /> View on GitHub
+                  </Button>
+                </Link>
+              </Card>
+
+              <Card className="text-center p-6 flex flex-col items-center justify-center">
+                <BookOpen className="h-12 w-12 text-foreground mb-4" />
+                <CardTitle className="mb-2">Documentation</CardTitle>
+                <CardDescription className="mb-4">
+                  Dive deep into the architecture, APIs, and usage guides.
+                </CardDescription>
+                <Link href="/docs" target="_blank">
+                  <Button variant="outline" className="gap-2">
+                    <BookOpen className="h-4 w-4" /> Read Docs
+                  </Button>
+                </Link>
+              </Card>
+
+              <Card className="text-center p-6 flex flex-col items-center justify-center">
+                <Users className="h-12 w-12 text-foreground mb-4" />
+                <CardTitle className="mb-2">Community Forum</CardTitle>
+                <CardDescription className="mb-4">
+                  Connect with other developers, ask questions, and share ideas.
+                </CardDescription>
+                <Link href="/community" target="_blank">
+                  <Button variant="outline" className="gap-2">
+                    <Users className="h-4 w-4" /> Join Community
+                  </Button>
+                </Link>
+              </Card>
+            </div>
+
+            <div className="mt-16 text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold mb-4">Why Open Source?</h2>
+              <p className="text-lg text-muted-foreground mb-6">
+                PencilGPT embraces open source to foster transparency, collaboration, and innovation.
+                By opening up core components, we empower developers to customize, extend, and
+                contribute to the future of AI development.
+              </p>
+              <Button size="lg" className="gap-2" onClick={() => setActiveTab("deployments")}>
+                Start Deploying <Crown className="h-5 w-5" />
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="deployments" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Your Deployments</h2>
+                <p className="text-muted-foreground">
+                  Manage your PencilGPT model deployments
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowNewDeployment(true)}
+                disabled={remainingDeployments <= 0}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New Deployment
+              </Button>
+            </div>
+
+            {showNewDeployment && (
+              <Card className="p-6">
+                <CardHeader>
+                  <CardTitle>Create New Deployment</CardTitle>
+                  <CardDescription>
+                    Deploy your PencilGPT model to a custom subdomain
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Deployment Name</Label>
+                      <Input
+                        placeholder="my-pencilgpt-model"
+                        value={newDeployment.name}
+                        onChange={(e) => setNewDeployment(prev => ({ ...prev, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Framework</Label>
+                      <Select value={newDeployment.framework} onValueChange={(value) => 
+                        setNewDeployment(prev => ({ ...prev, framework: value }))
+                      }>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {frameworks.map((framework) => (
+                            <SelectItem key={framework.value} value={framework.value}>
+                              <div className="flex items-center gap-2">
+                                <span>{framework.icon}</span>
+                                <span>{framework.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Model Type</Label>
+                    <Select value={newDeployment.modelType} onValueChange={(value) => 
+                      setNewDeployment(prev => ({ ...prev, modelType: value }))
+                    }>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {modelTypes.map((modelType) => (
+                          <SelectItem key={modelType.value} value={modelType.value}>
+                            <div className="flex items-center gap-2">
+                              <span>{modelType.icon}</span>
+                              <span>{modelType.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      placeholder="Describe your PencilGPT model..."
+                      value={newDeployment.description}
+                      onChange={(e) => setNewDeployment(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleCreateDeployment}
+                      disabled={!newDeployment.name.trim() || isCreatingDeployment}
+                      className="flex-1"
+                    >
+                      {isCreatingDeployment ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Crown className="h-4 w-4 mr-2" />
+                          Deploy Model
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowNewDeployment(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {isLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p>Loading deployments...</p>
+              </div>
+            ) : deployments.length === 0 ? (
+              <Card className="text-center py-12">
+                <Cloud className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-xl font-semibold mb-2">No Deployments Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Create your first PencilGPT deployment to get started
+                </p>
+                <Button onClick={() => setShowNewDeployment(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Deployment
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {deployments.map((deployment) => (
+                  <Card key={deployment.id} className="p-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{framework.icon}</span>
-                        <div>
-                          <CardTitle className="text-lg">{framework.name}</CardTitle>
-                          <CardDescription>{framework.description}</CardDescription>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(deployment.status)}
+                          <div>
+                            <h3 className="font-semibold">{deployment.name}</h3>
+                            <p className="text-sm text-muted-foreground">{deployment.description}</p>
+                          </div>
                         </div>
                       </div>
-                      {getStatusIcon(framework.status)}
+                      <div className="flex items-center gap-2">
+                        <Badge className={getStatusColor(deployment.status)}>
+                          {deployment.status}
+                        </Badge>
+                        <Badge variant="outline">
+                          {getFrameworkIcon(deployment.framework)} {deployment.framework}
+                        </Badge>
+                        <Badge variant="outline">
+                          {getModelTypeIcon(deployment.modelType)} {deployment.modelType}
+                        </Badge>
+                      </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <Badge variant="outline">{framework.size}</Badge>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>pencilx.vercel.app/{deployment.subdomain}</span>
+                        <span>Created {new Date(deployment.createdAt).toLocaleDateString()}</span>
+                      </div>
                       <div className="flex gap-2">
+                        {deployment.status === 'deployed' && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={deployment.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              View
+                            </a>
+                          </Button>
+                        )}
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => setSelectedFramework(framework.id)}
+                          onClick={() => {
+                            setSelectedDeployment(deployment)
+                            handleFetchLogs(deployment.id)
+                          }}
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
+                          <Eye className="h-4 w-4 mr-2" />
+                          Logs
                         </Button>
-                        <Button size="sm">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Configure
-                        </Button>
+                        {deployment.status !== 'stopped' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleStopDeployment(deployment.id)}
+                          >
+                            <Pause className="h-4 w-4 mr-2" />
+                            Stop
+                          </Button>
+                        )}
                       </div>
                     </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Deployment Templates</h2>
+              <p className="text-muted-foreground">
+                Quick-start templates for common PencilGPT deployments
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {deploymentTemplates.map((template, index) => (
+                <Card key={index} className="cursor-pointer hover:border-foreground/20">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span>{getFrameworkIcon(template.framework)}</span>
+                      {template.name}
+                    </CardTitle>
+                    <CardDescription>{template.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      <Badge variant="outline">
+                        {getFrameworkIcon(template.framework)} {template.framework}
+                      </Badge>
+                      <Badge variant="outline">
+                        {getModelTypeIcon(template.modelType)} {template.modelType}
+                      </Badge>
+                    </div>
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        setNewDeployment({
+                          name: template.name.toLowerCase().replace(/\s+/g, '-'),
+                          description: template.description,
+                          framework: template.framework,
+                          modelType: template.modelType,
+                          deploymentConfig: template.template
+                        })
+                        setShowNewDeployment(true)
+                        setActiveTab("deployments")
+                      }}
+                    >
+                      Use Template
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
-          {/* Training Tab */}
-          <TabsContent value="training" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              {/* Training Configuration */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    Training Configuration
-                  </CardTitle>
-                  <CardDescription>
-                    Configure your PencilGPT training parameters
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="framework">Base Model</Label>
-                    <Select value={selectedFramework} onValueChange={setSelectedFramework}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select base model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ossFrameworks.map((framework) => (
-                          <SelectItem key={framework.id} value={framework.id}>
-                            {framework.icon} {framework.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="preset">Training Preset</Label>
-                    <Select value={selectedPreset} onValueChange={setSelectedPreset}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select training preset" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {trainingPresets.map((preset) => (
-                          <SelectItem key={preset.name} value={preset.name}>
-                            {preset.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="epochs">Epochs</Label>
-                      <Input
-                        id="epochs"
-                        type="number"
-                        value={customConfig.epochs}
-                        onChange={(e) => setCustomConfig(prev => ({ ...prev, epochs: parseInt(e.target.value) }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="learningRate">Learning Rate</Label>
-                      <Input
-                        id="learningRate"
-                        type="number"
-                        step="0.0001"
-                        value={customConfig.learningRate}
-                        onChange={(e) => setCustomConfig(prev => ({ ...prev, learningRate: parseFloat(e.target.value) }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="batchSize">Batch Size</Label>
-                      <Input
-                        id="batchSize"
-                        type="number"
-                        value={customConfig.batchSize}
-                        onChange={(e) => setCustomConfig(prev => ({ ...prev, batchSize: parseInt(e.target.value) }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="maxLength">Max Length</Label>
-                      <Input
-                        id="maxLength"
-                        type="number"
-                        value={customConfig.maxLength}
-                        onChange={(e) => setCustomConfig(prev => ({ ...prev, maxLength: parseInt(e.target.value) }))}
-                      />
-                    </div>
-                  </div>
-
-                  <Button 
-                    onClick={handleStartTraining}
-                    disabled={isTraining}
-                    className="w-full"
-                  >
-                    {isTraining ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Training PencilGPT...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Training PencilGPT
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Training Progress */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
-                    Training Progress
-                  </CardTitle>
-                  <CardDescription>
-                    Monitor your PencilGPT training session
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isTraining ? (
-                    <>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{Math.round(trainingProgress)}%</span>
-                        </div>
-                        <Progress value={trainingProgress} className="w-full" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
-                          <span className="text-sm font-medium">Status: {trainingStatus}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Training PencilGPT on {selectedFramework} base model...
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No training session active</p>
-                      <p className="text-sm text-muted-foreground">Start training to see progress</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Deployment Tab */}
-          <TabsContent value="deployment" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Layers className="h-5 w-5" />
-                    Deploy PencilGPT
-                  </CardTitle>
-                  <CardDescription>
-                    Deploy your trained PencilGPT model
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Model Name</Label>
-                    <Input placeholder="my-pencilgpt-model" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Deployment Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select deployment type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="api">API Endpoint</SelectItem>
-                        <SelectItem value="docker">Docker Container</SelectItem>
-                        <SelectItem value="serverless">Serverless Function</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button className="w-full">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Deploy PencilGPT
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Terminal className="h-5 w-5" />
-                    Model Management
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your deployed PencilGPT models
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <p className="font-medium">PencilGPT-Code</p>
-                        <p className="text-sm text-muted-foreground">Code generation model</p>
-                      </div>
-                      <Badge variant="outline">Active</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <p className="font-medium">PencilGPT-Creative</p>
-                        <p className="text-sm text-muted-foreground">Creative writing model</p>
-                      </div>
-                      <Badge variant="outline">Training</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Community Tab */}
           <TabsContent value="community" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Github className="h-5 w-5" />
-                    Open Source
-                  </CardTitle>
-                  <CardDescription>
-                    Contribute to the PencilGPT ecosystem
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 border rounded">
-                      <Github className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">PencilGPT Core</p>
-                        <p className="text-sm text-muted-foreground">Main training framework</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 p-3 border rounded">
-                      <GitBranch className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">Model Zoo</p>
-                        <p className="text-sm text-muted-foreground">Pre-trained PencilGPT models</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 p-3 border rounded">
-                      <Package className="h-5 w-5" />
-                      <div>
-                        <p className="font-medium">Training Tools</p>
-                        <p className="text-sm text-muted-foreground">Utilities and scripts</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold mb-4">Join the PencilGPT Community</h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Connect with developers, share your models, and contribute to the future of open-source AI.
+              </p>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Documentation
-                  </CardTitle>
-                  <CardDescription>
-                    Learn how to train and deploy PencilGPT
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Getting Started Guide
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full justify-start">
-                      <Code className="h-4 w-4 mr-2" />
-                      API Documentation
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full justify-start">
-                      <Database className="h-4 w-4 mr-2" />
-                      Dataset Preparation
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Configuration Reference
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="grid md:grid-cols-2 gap-8">
+                <Card className="p-6">
+                  <Github className="h-12 w-12 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">GitHub</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Contribute to the core PencilGPT codebase and submit your own models.
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    <Github className="h-4 w-4 mr-2" />
+                    View Repository
+                  </Button>
+                </Card>
+
+                <Card className="p-6">
+                  <Users className="h-12 w-12 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Discord</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Join our Discord community for real-time discussions and support.
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    <Users className="h-4 w-4 mr-2" />
+                    Join Discord
+                  </Button>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Deployment Logs Modal */}
+        {selectedDeployment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Deployment Logs</CardTitle>
+                    <CardDescription>{selectedDeployment.name}</CardDescription>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSelectedDeployment(null)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-black text-green-400 p-4 rounded font-mono text-sm max-h-96 overflow-auto">
+                  {deploymentLogs.length === 0 ? (
+                    <div className="text-gray-500">No logs available</div>
+                  ) : (
+                    deploymentLogs.map((log, index) => (
+                      <div key={index} className="mb-1">
+                        {log}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </AppLayout>
   )
