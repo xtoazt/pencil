@@ -52,7 +52,7 @@ import {
   Globe,
   Smartphone,
   Tablet,
-  Desktop
+  Monitor
 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
@@ -836,7 +836,7 @@ export default function CodeStudioPage() {
                             <Tablet className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline">
-                            <Desktop className="h-4 w-4" />
+                            <Monitor className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { getSql } from "@/lib/database"
 
+export const dynamic = 'force-dynamic'
+
 interface Deployment {
   id: string
   name: string
@@ -219,19 +221,5 @@ export default async function SubdomainPage({
   }
 }
 
-export async function generateStaticParams() {
-  try {
-    const sql = getSql()
-    const deployments = await sql`
-      SELECT subdomain FROM deployments 
-      WHERE status = 'deployed'
-    `
-
-    return deployments.map((deployment: any) => ({
-      subdomain: deployment.subdomain,
-    }))
-  } catch (error) {
-    console.error("Error generating static params:", error)
-    return []
-  }
-}
+// Removed generateStaticParams to make this page dynamic
+// This prevents build-time database queries that fail when the table doesn't exist

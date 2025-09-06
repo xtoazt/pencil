@@ -56,7 +56,8 @@ import {
   Diamond,
   Star,
   Award,
-  Trophy
+  Trophy,
+  Brain
 } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/components/auth-provider"
