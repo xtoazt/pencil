@@ -234,13 +234,12 @@ export function useInstantMode(): UseInstantModeReturn {
       // Start clipboard monitoring with ultra-fast polling - ALWAYS ENABLED
       clipboardIntervalRef.current = setInterval(monitorClipboard, 200) // Check every 200ms for ultra-fast response
         
-        // Start worker monitoring
-        if (workerRef.current) {
-          workerRef.current.postMessage({
-            type: 'START_MONITORING',
-            data: { apiEndpoint: '/api/instant' }
-          })
-        }
+      // Start worker monitoring
+      if (workerRef.current) {
+        workerRef.current.postMessage({
+          type: 'START_MONITORING',
+          data: { apiEndpoint: '/api/instant' }
+        })
       }
     } else {
       // Stopping instant mode
