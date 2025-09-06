@@ -22,7 +22,6 @@ import {
   CheckCircle,
   Clock,
   Brain,
-  Zap,
   Activity,
   Monitor,
   Smartphone,

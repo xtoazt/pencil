@@ -42,7 +42,6 @@ import {
   Palette,
   Cpu,
   User,
-  Zap,
 } from "lucide-react"
 import Link from "next/link"
 
