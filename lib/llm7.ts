@@ -157,14 +157,14 @@ export function getAvailableModels() {
     name: key.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     provider: getModelProvider(key),
     category: getModelCategory(key),
-    capabilities: MODEL_CAPABILITIES[key] || { text: true, image: false, speed: "medium", quality: "good" },
+    capabilities: MODEL_CAPABILITIES[key as keyof typeof MODEL_CAPABILITIES] || { text: true, image: false, speed: "medium", quality: "good" },
     description: getModelDescription(key),
   }))
 }
 
 // Get models by category
 export function getModelsByCategory(category: string) {
-  return MODEL_CATEGORIES[category] || []
+  return MODEL_CATEGORIES[category as keyof typeof MODEL_CATEGORIES] || []
 }
 
 // Get model provider for display
@@ -192,11 +192,11 @@ function getModelCategory(model: string): string {
 
 // Get model description
 function getModelDescription(model: string): string {
-  const capabilities = MODEL_CAPABILITIES[model]
+  const capabilities = MODEL_CAPABILITIES[model as keyof typeof MODEL_CAPABILITIES]
   if (!capabilities) return "AI model for various tasks"
   
   let description = ""
-  if (capabilities.specialty) {
+  if ('specialty' in capabilities && capabilities.specialty) {
     description += `${capabilities.specialty.charAt(0).toUpperCase() + capabilities.specialty.slice(1)} specialist. `
   }
   description += `${capabilities.quality} quality, ${capabilities.speed} speed`
@@ -446,8 +446,8 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
     console.error("Chat completion error:", error)
       
       // If it's a network error or timeout, try next API key
-      if (error.name === 'AbortError' || error.message.includes('fetch')) {
-        markApiKeyExhausted(getCurrentApiKey(), error.message)
+      if ((error as any).name === 'AbortError' || (error as any).message?.includes('fetch')) {
+        markApiKeyExhausted(getCurrentApiKey(), (error as any).message)
         attempts++
         continue
       }
@@ -463,7 +463,6 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
 
 // Code generation with specialized models
 export async function generateCode(prompt: string, language = "javascript") {
-  try {
     // Use Codestral for code generation as it's specialized for coding tasks
     const messages: ChatMessage[] = [
       {
@@ -476,6 +475,7 @@ export async function generateCode(prompt: string, language = "javascript") {
       },
     ]
 
+  try {
     return await chatCompletion(messages, "codestral")
   } catch (error) {
     console.error("Code generation error:", error)
@@ -513,12 +513,12 @@ export async function generateImage(prompt: string, width = 512, height = 512) {
       // Extract image URL from response
       const urlMatch = responseContent.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp)/i)
       if (urlMatch) {
-        return {
+    return {
           url: urlMatch[0],
-          prompt: prompt,
-          width: width,
-          height: height,
-          model: "rtist",
+      prompt: prompt,
+      width: width,
+      height: height,
+      model: "rtist",
           response: responseContent
         }
       }
@@ -545,7 +545,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 1,
       description: "Analyzing prompt and determining optimal approach",
-      model: "mistral-large",
+      model: "mistral-large-2411",
       duration: 0,
       status: "processing",
     })
@@ -571,7 +571,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       },
     ]
 
-    const analysis = await chatCompletion(analysisMessages, "mistral-large")
+    const analysis = await chatCompletion(analysisMessages, "mistral-large-2411")
     const analysisDuration = Date.now() - analysisStart
 
     let analysisResult
@@ -594,7 +594,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     }
 
     modelUsage.push({
-      model: "mistral-large",
+      model: "mistral-large-2411",
       purpose: "Prompt Analysis",
       tokens: analysis.usage || 0,
       confidence: analysisResult.confidence || 0.8,
@@ -605,7 +605,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: 2,
       description: `Generating primary ${analysisResult.type} response`,
-      model: analysisResult.type === "code" ? "codestral" : "gpt-4.1-nano",
+      model: analysisResult.type === "code" ? "codestral-2501" : "gpt-4.1-nano",
       duration: 0,
       status: "processing",
     })
@@ -646,7 +646,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       processingSteps.push({
         step: 3,
         description: "Generating alternative perspective",
-        model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large",
+      model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large-2411",
         duration: 0,
         status: "processing",
       })
@@ -668,7 +668,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
         },
       ]
 
-      alternativeResult = await chatCompletion(altMessages, analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large")
+      alternativeResult = await chatCompletion(altMessages, analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large-2411")
       const altDuration = Date.now() - altStart
 
       processingSteps[2] = {
@@ -678,7 +678,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
       }
 
       modelUsage.push({
-        model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large",
+        model: analysisResult.type === "code" ? "gpt-4.1-nano" : "mistral-large-2411",
         purpose: "Alternative Perspective",
         tokens: alternativeResult.usage || 0,
         confidence: 0.85,
@@ -690,7 +690,7 @@ export async function superModeCompletion(prompt: string): Promise<SuperModeResu
     processingSteps.push({
       step: processingSteps.length + 1,
       description: "Synthesizing enhanced final response",
-      model: "mistral-large",
+      model: "mistral-large-2411",
       duration: 0,
       status: "processing",
     })
@@ -736,7 +736,7 @@ Please synthesize these into one enhanced response.`,
       },
     ]
 
-    const synthesis = await chatCompletion(synthesisMessages, "mistral-large")
+    const synthesis = await chatCompletion(synthesisMessages, "mistral-large-2411")
     const synthDuration = Date.now() - synthStart
 
     processingSteps[processingSteps.length - 1] = {
@@ -746,7 +746,7 @@ Please synthesize these into one enhanced response.`,
     }
 
     modelUsage.push({
-      model: "mistral-large",
+      model: "mistral-large-2411",
       purpose: "Response Synthesis",
       tokens: synthesis.usage || 0,
       confidence: 0.9,

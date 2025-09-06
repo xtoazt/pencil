@@ -69,13 +69,13 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
   const getStatusColor = (status: string) => {
     switch (status) {
       case "processing":
-        return "border-blue-200 bg-blue-50"
+        return "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20"
       case "completed":
-        return "border-green-200 bg-green-50"
+        return "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20"
       case "error":
-        return "border-red-200 bg-red-50"
+        return "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20"
       default:
-        return "border-gray-200 bg-gray-50"
+        return "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/20"
     }
   }
 
@@ -91,6 +91,12 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
             Model Processing Status
+            {isProcessing && (
+              <div className="flex items-center gap-1 ml-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-blue-600 dark:text-blue-400">LIVE</span>
+              </div>
+            )}
           </CardTitle>
           <CardDescription>
             Real-time performance monitoring across all AI models
@@ -100,23 +106,28 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Overall Progress</span>
-              <span>{Math.round(animatedProgress)}%</span>
+              <span className="font-mono">{Math.round(animatedProgress)}%</span>
             </div>
             <Progress value={animatedProgress} className="h-2" />
+            {isProcessing && (
+              <div className="text-xs text-muted-foreground">
+                Processing {processingModels} of {models.length} models...
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{completedModels}</div>
-              <div className="text-xs text-muted-foreground">Completed</div>
+            <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{completedModels}</div>
+              <div className="text-xs text-green-700 dark:text-green-300">Completed</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{processingModels}</div>
-              <div className="text-xs text-muted-foreground">Processing</div>
+            <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{processingModels}</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">Processing</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{errorModels}</div>
-              <div className="text-xs text-muted-foreground">Errors</div>
+            <div className="text-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{errorModels}</div>
+              <div className="text-xs text-red-700 dark:text-red-300">Errors</div>
             </div>
           </div>
         </CardContent>
@@ -125,29 +136,58 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
       {/* Individual Model Status */}
       <div className="grid gap-3">
         {models.map((model, index) => (
-          <Card key={model.id} className={`card-minimal border-l-4 ${getStatusColor(model.status)}`}>
+          <Card key={model.id} className={`card-minimal border-l-4 ${getStatusColor(model.status)} transition-all duration-300`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {getStatusIcon(model.status)}
+                  <div className="relative">
+                    {getStatusIcon(model.status)}
+                    {model.status === "processing" && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                    )}
+                  </div>
                   <div>
-                    <div className="font-medium text-sm">{model.name}</div>
+                    <div className="font-medium text-sm text-foreground">{model.name}</div>
                     <div className="text-xs text-muted-foreground">
                       {model.status === "processing" && model.progress !== undefined && (
-                        <span>Processing... {Math.round(model.progress)}%</span>
+                        <span className="flex items-center gap-1">
+                          <span>Processing...</span>
+                          <span className="font-mono">{Math.round(model.progress)}%</span>
+                        </span>
                       )}
                       {model.status === "completed" && (
-                        <span>
-                          {model.tokens && `${model.tokens} tokens`}
-                          {model.duration && ` • ${model.duration}ms`}
-                          {model.confidence && ` • ${Math.round(model.confidence * 100)}% confidence`}
+                        <span className="flex items-center gap-2">
+                          {model.tokens && (
+                            <span className="flex items-center gap-1">
+                              <Zap className="h-3 w-3" />
+                              {model.tokens} tokens
+                            </span>
+                          )}
+                          {model.duration && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {model.duration}ms
+                            </span>
+                          )}
+                          {model.confidence && (
+                            <span className="flex items-center gap-1">
+                              <Target className="h-3 w-3" />
+                              {Math.round(model.confidence * 100)}% confidence
+                            </span>
+                          )}
                         </span>
                       )}
                       {model.status === "error" && (
-                        <span className="text-red-600">{model.error}</span>
+                        <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {model.error}
+                        </span>
                       )}
                       {model.status === "idle" && (
-                        <span>Ready</span>
+                        <span className="flex items-center gap-1">
+                          <Cpu className="h-3 w-3" />
+                          Ready
+                        </span>
                       )}
                     </div>
                   </div>
@@ -155,30 +195,41 @@ export function ModelPerformance({ models, overallProgress = 0, isProcessing = f
 
                 <div className="flex items-center gap-2">
                   {model.status === "processing" && model.progress !== undefined && (
-                    <div className="w-16">
-                      <Progress value={model.progress} className="h-1" />
+                    <div className="w-20">
+                      <Progress value={model.progress} className="h-2" />
                     </div>
                   )}
                   
                   {model.status === "completed" && model.confidence && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
                       <Target className="h-3 w-3 mr-1" />
                       {Math.round(model.confidence * 100)}%
                     </Badge>
                   )}
 
                   {model.status === "completed" && model.tokens && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                       <Zap className="h-3 w-3 mr-1" />
                       {model.tokens}
+                    </Badge>
+                  )}
+
+                  {model.status === "completed" && model.duration && (
+                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {model.duration}ms
                     </Badge>
                   )}
                 </div>
               </div>
 
               {model.status === "processing" && model.progress !== undefined && (
-                <div className="mt-2">
-                  <Progress value={model.progress} className="h-1" />
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>Processing...</span>
+                    <span className="font-mono">{Math.round(model.progress)}%</span>
+                  </div>
+                  <Progress value={model.progress} className="h-2" />
                 </div>
               )}
             </CardContent>

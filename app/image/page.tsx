@@ -153,7 +153,18 @@ export default function ImageLabPage() {
       })
 
       const data = await response.json()
-      if (data.response) {
+      if (data.content) {
+        setGeneratedImage(data.content)
+        setImageHistory(prev => [...prev, {
+          id: Date.now(),
+          prompt,
+          image: data.content,
+          style: selectedStyle,
+          size: selectedSize,
+          model: selectedModel,
+          timestamp: new Date()
+        }])
+      } else if (data.response) {
         setGeneratedImage(data.response)
         setImageHistory(prev => [...prev, {
           id: Date.now(),
@@ -164,6 +175,8 @@ export default function ImageLabPage() {
           model: selectedModel,
           timestamp: new Date()
         }])
+      } else {
+        console.error("No image content received from API:", data)
       }
     } catch (error) {
       console.error("Error generating image:", error)

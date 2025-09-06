@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { chatCompletion, generateCode, generateImage, superModeCompletion } from "@/lib/llm7"
+import { aiCompletion, generateCodeWithFallback, generateImageWithFallback } from "@/lib/ai-fallback"
 import { getSql } from "@/lib/database"
 import jwt from "jsonwebtoken"
 
@@ -46,14 +47,24 @@ export async function POST(request: NextRequest) {
 
     switch (mode) {
       case "chat":
-        // Standard chat mode
-        response = await chatCompletion(messages, model)
+        // Standard chat mode with fallback
+        try {
+          response = await aiCompletion(messages, model)
+        } catch (error) {
+          console.warn('AI fallback failed, trying direct LLM7:', error.message)
+          response = await chatCompletion(messages, model)
+        }
         break
 
       case "code":
-        // Code generation mode with language specification
-        const codePrompt = language ? `Generate ${language} code for: ${message}` : message
-        response = await generateCode(codePrompt, language)
+        // Code generation mode with fallback
+        try {
+          const codePrompt = language ? `Generate ${language} code for: ${message}` : message
+          response = await generateCodeWithFallback(codePrompt, language)
+        } catch (error) {
+          console.warn('Code generation fallback failed, trying direct LLM7:', error.message)
+          response = await generateCode(message, language)
+        }
         break
 
       case "image":

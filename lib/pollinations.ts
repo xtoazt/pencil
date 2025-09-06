@@ -159,19 +159,19 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
 
 // Code generation with specialized models
 export async function generateCode(prompt: string, language = "javascript") {
-  try {
-    // Use Codestral for code generation as it's specialized for coding tasks
-    const messages: ChatMessage[] = [
-      {
-        role: "system",
-        content: `You are an expert ${language} developer. Generate clean, well-documented code based on the user's request. Include comments explaining the logic and best practices.`,
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ]
+  // Use Codestral for code generation as it's specialized for coding tasks
+  const messages: ChatMessage[] = [
+    {
+      role: "system",
+      content: `You are an expert ${language} developer. Generate clean, well-documented code based on the user's request. Include comments explaining the logic and best practices.`,
+    },
+    {
+      role: "user",
+      content: prompt,
+    },
+  ]
 
+  try {
     return await chatCompletion(messages, "codestral")
   } catch (error) {
     console.error("Code generation error:", error)

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { getAvailableModels } from "@/lib/llm7"
+import { SubtleAd } from "@/components/subtle-ad"
 import {
   MessageSquare,
   Terminal,
@@ -328,6 +329,9 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Subtle Ad Section */}
+        <SubtleAd />
       </div>
     </AppLayout>
   )

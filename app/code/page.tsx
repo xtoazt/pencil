@@ -51,10 +51,12 @@ import {
   Database,
   Globe,
   Smartphone,
-  Tablet
+  Tablet,
+  Github
 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
+import { GitHubIntegration } from "@/components/github-integration"
 
 interface ProjectFile {
   id: string
@@ -250,13 +252,15 @@ export default function CodeStudioPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState("projects")
   const [previewMode, setPreviewMode] = useState(false)
-  const [availableModels, setAvailableModels] = useState([])
+  const [availableModels, setAvailableModels] = useState<any[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [showNewProject, setShowNewProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectFramework, setNewProjectFramework] = useState("react")
   const [newProjectDescription, setNewProjectDescription] = useState("")
+  const [selectedGitHubRepo, setSelectedGitHubRepo] = useState<any>(null)
+  const [showGitHubIntegration, setShowGitHubIntegration] = useState(false)
 
   const fileTreeRef = useRef<HTMLDivElement>(null)
 
@@ -326,7 +330,7 @@ export default function CodeStudioPage() {
   const createNewFile = () => {
     if (!currentProject) return
 
-    const fileName = prompt("Enter file name:", "new-file.js")
+    const fileName = window.prompt("Enter file name:", "new-file.js")
     if (!fileName) return
 
     const language = programmingLanguages.find(lang => 
@@ -426,10 +430,50 @@ export default function CodeStudioPage() {
   }
 
   const handleGenerateCode = async () => {
-    if (!prompt.trim() || !selectedFile) return
+    if (!prompt.trim()) return
 
     setIsGenerating(true)
     try {
+      // If no file is selected, create a new one
+      let targetFile = selectedFile
+      if (!targetFile) {
+        const newFile: ProjectFile = {
+          id: `file-${Date.now()}`,
+          name: `generated-${selectedLanguage}.${getFileExtension(selectedLanguage)}`,
+          content: "",
+          language: selectedLanguage,
+          path: `/generated-${selectedLanguage}.${getFileExtension(selectedLanguage)}`,
+          isOpen: true,
+          isModified: false,
+          lastModified: new Date()
+        }
+        
+        // Add to current project or create new one
+        if (currentProject) {
+          const updatedProject = {
+            ...currentProject,
+            files: [...currentProject.files, newFile]
+          }
+          setProjects(prev => prev.map(p => p.id === currentProject.id ? updatedProject : p))
+          setCurrentProject(updatedProject)
+        } else {
+          const newProject: Project = {
+            id: `project-${Date.now()}`,
+            name: "Generated Code",
+            description: "AI Generated Code",
+            framework: "vanilla",
+            files: [newFile],
+            createdAt: new Date(),
+            lastModified: new Date()
+          }
+          setProjects(prev => [...prev, newProject])
+          setCurrentProject(newProject)
+        }
+        
+        setSelectedFile(newFile)
+        targetFile = newFile
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -439,11 +483,11 @@ export default function CodeStudioPage() {
           messages: [
             {
               role: "system",
-              content: `You are an expert ${selectedFile.language} developer. Generate clean, efficient, and well-commented code based on the user's request. Consider the existing code context and maintain consistency.`
+              content: `You are an expert ${targetFile.language} developer. Generate clean, efficient, and well-commented code based on the user's request. Consider the existing code context and maintain consistency. Return only the code without explanations.`
             },
             {
               role: "user",
-              content: `Generate ${selectedFile.language} code for: ${prompt}. Current file content:\n${selectedFile.content}`
+              content: `Generate ${targetFile.language} code for: ${prompt}. ${targetFile.content ? `Current file content:\n${targetFile.content}` : 'Create new code from scratch.'}`
             }
           ],
           mode: "code",
@@ -452,15 +496,42 @@ export default function CodeStudioPage() {
       })
 
       const data = await response.json()
-      if (data.response) {
-        updateFile(selectedFile.id, data.response)
+      if (data.content) {
+        updateFile(targetFile.id, data.content)
         setPrompt("")
+      } else if (data.response) {
+        updateFile(targetFile.id, data.response)
+        setPrompt("")
+      } else {
+        console.error("No content received from API:", data)
       }
     } catch (error) {
       console.error("Error generating code:", error)
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const getFileExtension = (language: string): string => {
+    const extensions: { [key: string]: string } = {
+      javascript: 'js',
+      typescript: 'ts',
+      python: 'py',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'c',
+      html: 'html',
+      css: 'css',
+      json: 'json',
+      sql: 'sql',
+      php: 'php',
+      ruby: 'rb',
+      go: 'go',
+      rust: 'rs',
+      swift: 'swift',
+      kotlin: 'kt'
+    }
+    return extensions[language] || 'txt'
   }
 
   const runCode = () => {
@@ -546,6 +617,12 @@ export default function CodeStudioPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {selectedGitHubRepo && (
+              <Badge variant="outline" className="text-green-600 border-green-600">
+                <Github className="h-3 w-3 mr-1" />
+                {selectedGitHubRepo.name}
+              </Badge>
+            )}
             <Badge variant="outline" className="text-accent border-accent">
               <Cpu className="h-3 w-3 mr-1" />
               {availableModels.length} Models
@@ -564,10 +641,11 @@ export default function CodeStudioPage() {
           {/* Sidebar */}
           <div className="w-80 border-r bg-muted/20 flex flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 m-2">
+              <TabsList className="grid w-full grid-cols-4 m-2">
                 <TabsTrigger value="projects">Projects</TabsTrigger>
                 <TabsTrigger value="files">Files</TabsTrigger>
                 <TabsTrigger value="generate">Generate</TabsTrigger>
+                <TabsTrigger value="github">GitHub</TabsTrigger>
               </TabsList>
 
               <TabsContent value="projects" className="flex-1 p-2">
@@ -702,7 +780,7 @@ export default function CodeStudioPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {getModelsByCategory("Coding Models").map((model) => (
+                        {getModelsByCategory("Coding Models").map((model: string) => (
                           <SelectItem key={model} value={model}>
                             <div className="flex items-center gap-2">
                               <span className="text-xs">{model}</span>
@@ -726,7 +804,7 @@ export default function CodeStudioPage() {
 
                   <Button 
                     onClick={handleGenerateCode} 
-                    disabled={!prompt.trim() || isGenerating || !selectedFile}
+                    disabled={!prompt.trim() || isGenerating}
                     className="w-full"
                   >
                     {isGenerating ? (
@@ -741,6 +819,30 @@ export default function CodeStudioPage() {
                       </>
                     )}
                   </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="github" className="flex-1 p-2">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Github className="h-5 w-5" />
+                    <h3 className="font-medium">GitHub Integration</h3>
+                  </div>
+                  
+                  <GitHubIntegration
+                    onRepoSelect={(repo) => {
+                      setSelectedGitHubRepo(repo)
+                      console.log('Selected repo:', repo)
+                    }}
+                    onCommit={(commitData) => {
+                      console.log('Commit successful:', commitData)
+                      // You could show a success message here
+                    }}
+                    files={currentProject?.files.map(file => ({
+                      path: file.path,
+                      content: file.content
+                    })) || []}
+                  />
                 </div>
               </TabsContent>
             </Tabs>

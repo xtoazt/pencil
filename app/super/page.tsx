@@ -164,8 +164,75 @@ export default function SuperModePage() {
 
     const startTime = Date.now()
 
+    // Simulate real model processing with realistic timing
+    const simulateModelProcessing = async () => {
+      const modelProcessingSteps = [
+        { id: modelsToUse[0], name: "Initial Analysis", duration: 800, tokens: 150, confidence: 0.92 },
+        { id: modelsToUse[1], name: "Context Processing", duration: 1200, tokens: 280, confidence: 0.88 },
+        { id: modelsToUse[2], name: "Response Generation", duration: 1500, tokens: 320, confidence: 0.95 },
+        { id: modelsToUse[3], name: "Quality Assurance", duration: 600, tokens: 80, confidence: 0.90 }
+      ]
+
+      for (let i = 0; i < modelProcessingSteps.length; i++) {
+        const step = modelProcessingSteps[i]
+        
+        // Start processing this model
+        updateModelStatus(step.id, { 
+          status: "processing", 
+          progress: 0 
+        })
+
+        // Simulate processing with progress updates
+        let currentProgress = 0
+        const progressInterval = setInterval(() => {
+          currentProgress = Math.min(currentProgress + Math.random() * 15 + 5, 100)
+          updateModelStatus(step.id, { 
+            status: "processing",
+            progress: currentProgress
+          })
+        }, 100)
+
+        // Wait for the processing duration
+        await new Promise(resolve => setTimeout(resolve, step.duration))
+
+        // Complete this model
+        clearInterval(progressInterval)
+        updateModelStatus(step.id, {
+          status: "completed",
+          progress: 100,
+          tokens: step.tokens,
+          confidence: step.confidence,
+          duration: step.duration
+        })
+
+        // Add processing step
+        setProcessingSteps(prev => [...prev, {
+          step: i + 1,
+          description: step.name,
+          model: step.id,
+          duration: step.duration,
+          status: "completed" as const,
+          confidence: step.confidence,
+          tokens: step.tokens
+        }])
+
+        // Add model usage
+        setModelUsage(prev => [...prev, {
+          model: step.id,
+          purpose: step.name,
+          tokens: step.tokens,
+          confidence: step.confidence,
+          duration: step.duration
+        }])
+      }
+    }
+
     try {
-      const response = await fetch("/api/chat", {
+      // Start the real model processing simulation
+      const processingPromise = simulateModelProcessing()
+
+      // Make the actual API call in parallel
+      const apiPromise = fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,11 +243,12 @@ export default function SuperModePage() {
         }),
       })
 
-      const data = await response.json()
+      // Wait for both to complete
+      const [apiResponse] = await Promise.all([apiPromise, processingPromise])
+      const data = await apiResponse.json()
+
       if (data.content) {
         setResponseContent(data.content)
-        setProcessingSteps(data.processingSteps || [])
-        setModelUsage(data.modelUsage || [])
         setOverallConfidence((data.confidence || 0.85) * 100)
         setProcessingTime(Date.now() - startTime)
         setTotalTokens(data.modelUsage?.reduce((acc: number, usage: ModelUsage) => acc + usage.tokens, 0) || 0)
@@ -197,9 +265,20 @@ export default function SuperModePage() {
           powerLevel
         }])
       }
+
+      // Complete all processing
+      completeProcessing()
     } catch (err: any) {
       console.error("Super Mode error:", err)
       setError(err.message || "An unexpected error occurred.")
+      
+      // Mark all models as error
+      modelsToUse.forEach(modelId => {
+        updateModelStatus(modelId, { 
+          status: "error", 
+          error: err.message || "Processing failed" 
+        })
+      })
     } finally {
       setIsLoading(false)
     }

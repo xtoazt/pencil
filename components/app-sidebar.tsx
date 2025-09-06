@@ -42,6 +42,7 @@ import {
   Palette,
   Cpu,
   User,
+  Server,
 } from "lucide-react"
 import Link from "next/link"
 import { SimpleThemeToggle } from "@/components/theme-toggle"
@@ -76,6 +77,11 @@ const navigationItems = [
     title: "Instant Mode",
     url: "/instant",
     icon: Zap,
+  },
+  {
+    title: "LocalAI",
+    url: "/localai",
+    icon: Server,
   },
   {
     title: "OSS Mode",
