@@ -79,7 +79,7 @@ export async function geminiInstantCompletion(content: string): Promise<{
     try {
       const currentApiKey = getCurrentGeminiKey()
       
-      console.log(`Making ultra-fast request to Gemini with key: ${currentApiKeyIndex + 1}/${GEMINI_API_KEYS.length}`)
+      console.log(`Making ultra-fast request to Gemini with key: ${currentGeminiKeyIndex + 1}/${GEMINI_API_KEYS.length}`)
       
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for instant mode

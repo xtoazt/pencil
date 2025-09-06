@@ -43,13 +43,26 @@ export async function POST(request: NextRequest) {
         break
 
       case "image":
-        // Image generation mode
-        response = await generateImage(message, width, height)
-        if (response.url) {
-          return NextResponse.json({
-            response: response,
-            type: "image",
-          })
+        // Image generation mode with fallback
+        try {
+          const { generateImageWithFallback } = await import("@/lib/fal-ai")
+          response = await generateImageWithFallback(message, width, height)
+          if (response.url) {
+            return NextResponse.json({
+              response: response,
+              type: "image",
+            })
+          }
+        } catch (error) {
+          console.error("Image generation failed:", error)
+          // Fallback to original method
+          response = await generateImage(message, width, height)
+          if (response.url) {
+            return NextResponse.json({
+              response: response,
+              type: "image",
+            })
+          }
         }
         break
 

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { ImageIcon, Download, Copy, Palette, Wand2, Brain, Settings, Eye, RefreshCw, Loader2, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCw, FlipHorizontal, FlipVertical, Crop, Filter, Layers, Save, Share2, Heart, Bookmark, MoreHorizontal, Camera, Upload, Trash2, Edit3, Move, Resize } from "lucide-react"
+import { ImageIcon, Download, Copy, Palette, Wand2, Brain, Settings, Eye, RefreshCw, Loader2, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCw, FlipHorizontal, FlipVertical, Crop, Filter, Layers, Save, Share2, Heart, Bookmark, MoreHorizontal, Camera, Upload, Trash2, Edit3, Move, Maximize } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
 
@@ -688,8 +688,8 @@ export default function ImageLabPage() {
                       Filters
                     </Button>
                     <Button variant="outline" disabled>
-                      <Resize className="h-4 w-4 mr-2" />
-                      Resize
+                      <Maximize className="h-4 w-4 mr-2" />
+                      Maximize
                     </Button>
                   </div>
                 </div>

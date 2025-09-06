@@ -488,7 +488,7 @@ export async function generateCode(prompt: string, language = "javascript") {
   }
 }
 
-// Image generation using LLM7 multimodal models
+// Image generation using LLM7 multimodal models with fal.ai fallback
 export async function generateImage(prompt: string, width = 512, height = 512) {
   try {
     // Use RTIST model for image generation
@@ -505,18 +505,30 @@ export async function generateImage(prompt: string, width = 512, height = 512) {
 
     const result = await chatCompletion(messages, "rtist")
     
-    // For now, return a placeholder since LLM7 image generation might work differently
-    // This will be updated once we test the actual image generation capabilities
-    return {
-      url: `https://via.placeholder.com/${width}x${height}/4F46E5/FFFFFF?text=Image+Generation+Coming+Soon`,
-      prompt: prompt,
-      width: width,
-      height: height,
-      model: "rtist",
-      response: result.choices[0].message.content
+    // Check if the result contains actual image data or just text description
+    const responseContent = result.choices[0].message.content
+    
+    // If RTIST model returns actual image URLs or data, use them
+    if (responseContent.includes("http") && (responseContent.includes(".jpg") || responseContent.includes(".png") || responseContent.includes(".jpeg"))) {
+      // Extract image URL from response
+      const urlMatch = responseContent.match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp)/i)
+      if (urlMatch) {
+        return {
+          url: urlMatch[0],
+          prompt: prompt,
+          width: width,
+          height: height,
+          model: "rtist",
+          response: responseContent
+        }
+      }
     }
+    
+    // If no actual image URL found, throw error to trigger fallback
+    throw new Error("LLM7 RTIST model did not return a valid image URL")
+    
   } catch (error) {
-    console.error("Image generation error:", error)
+    console.error("LLM7 image generation error:", error)
     throw error
   }
 }

@@ -42,7 +42,7 @@ import {
   Palette,
   Cpu,
   User,
-  Lightning,
+  Zap,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -75,7 +75,7 @@ const navigationItems = [
   {
     title: "Instant Mode",
     url: "/instant",
-    icon: Lightning,
+    icon: Zap,
   },
 ]
 

@@ -22,7 +22,7 @@ import {
   CheckCircle,
   Clock,
   Brain,
-  Lightning,
+  Zap,
   Activity,
   Monitor,
   Smartphone,
@@ -81,7 +81,7 @@ export default function InstantModePage() {
         {/* Header */}
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-primary flex items-center justify-center">
-            <Lightning className="h-8 w-8 text-primary-foreground" />
+            <Zap className="h-8 w-8 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground monospace">INSTANT MODE</h1>
@@ -302,7 +302,7 @@ export default function InstantModePage() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Lightning className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-muted-foreground">No instant responses yet</p>
                     <p className="text-sm text-muted-foreground">Start typing or copy something to clipboard</p>
                   </div>

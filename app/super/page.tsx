@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { Brain, Loader2, CheckCircle, XCircle, Clock, Cpu, Zap, Settings, Maximize2, Minimize2, Eye, EyeOff, Download, Copy, RefreshCw, BarChart3, Target, Lightbulb, Layers, Sparkles, TrendingUp, Activity, AlertTriangle, Info, Star, Award, Trophy, Crown, Gem, Diamond } from "lucide-react"
+import { Brain, Loader2, CheckCircle, XCircle, Clock, Cpu, Zap, Settings, Maximize2, Minimize2, Eye, EyeOff, Download, Copy, RefreshCw, BarChart3, Target, Lightbulb, Layers, Sparkles, TrendingUp, Activity, AlertTriangle, Info, Star, Award, Trophy, Crown, Gem, Diamond, Upload } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getAvailableModels, getModelsByCategory, getRecommendedModel, getSuperModeModels, getSuperModeConfig, SUPER_POWER_LEVELS } from "@/lib/llm7"
 import { ModelPerformance, useModelPerformance } from "@/components/model-performance"
@@ -108,13 +108,13 @@ export default function SuperModePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("generate")
-  const [availableModels, setAvailableModels] = useState([])
+  const [availableModels, setAvailableModels] = useState<any[]>([])
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [customModels, setCustomModels] = useState([])
+  const [customModels, setCustomModels] = useState<any[]>([])
   const [processingTime, setProcessingTime] = useState(0)
   const [totalTokens, setTotalTokens] = useState(0)
-  const [superModeHistory, setSuperModeHistory] = useState([])
+  const [superModeHistory, setSuperModeHistory] = useState<any[]>([])
   const [powerLevel, setPowerLevel] = useState(5)
   const [dailyUsage, setDailyUsage] = useState(0)
   const [usageLimit, setUsageLimit] = useState(10000)

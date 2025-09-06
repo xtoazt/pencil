@@ -13,6 +13,9 @@ export function getSql() {
   return sql
 }
 
+// Export sql for direct use in API routes
+export { getSql as sql }
+
 // User management functions
 export async function createUserPreferences(userId: string) {
   const sql = getSql()
