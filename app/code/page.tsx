@@ -51,8 +51,7 @@ import {
   Database,
   Globe,
   Smartphone,
-  Tablet,
-  Monitor
+  Tablet
 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { getAvailableModels, getModelsByCategory, getRecommendedModel } from "@/lib/llm7"
