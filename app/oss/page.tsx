@@ -749,52 +749,68 @@ export default function OSSModePage() {
               <Card className="card-terminal">
                 <CardHeader className="terminal-header">
                   <CardTitle className="flex items-center gap-2 font-mono">
-                    <MessageSquare className="h-5 w-5" />
-                    Chat Interface
+                    <Zap className="h-5 w-5" />
+                    OSS Deployment
                   </CardTitle>
                   <CardDescription className="font-mono text-sm">
                     {trainingStats?.isReadyForDeployment ? 
-                      `Ready to chat! You have ${trainingStats.messageCount} training messages.` :
-                      `Need ${trainingStats?.remainingMessages || 20} more messages to start chatting.`
+                      `Ready to deploy! You have ${trainingStats.messageCount} training messages.` :
+                      `Need ${trainingStats?.remainingMessages || 20} more messages to deploy.`
                     }
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="terminal-content">
                   <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded border min-h-[300px] max-h-[400px] overflow-y-auto">
-                      <div className="space-y-3">
-                        {trainingStats?.isReadyForDeployment ? (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="font-mono">Start a conversation with your OSS model!</p>
-                            <p className="font-mono text-sm">Your model is trained and ready to respond.</p>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="font-mono">Model not ready for deployment</p>
-                            <p className="font-mono text-sm">
-                              You need at least 20 messages to train your model. 
-                              You currently have {trainingStats?.messageCount || 0} messages.
-                            </p>
-                          </div>
-                        )}
+                    {/* Base Training Prompt */}
+                    <div className="p-4 bg-muted rounded border">
+                      <h4 className="font-mono font-semibold mb-3">Base Training Prompt</h4>
+                      <div className="bg-background p-3 rounded border font-mono text-sm">
+                        <p className="mb-2">You are an AI assistant trained on user conversations. Your role is to:</p>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                          <li>Provide helpful, accurate, and contextually appropriate responses</li>
+                          <li>Maintain the conversation style and tone from your training data</li>
+                          <li>Be concise but informative in your responses</li>
+                          <li>Ask clarifying questions when needed</li>
+                          <li>Remember context from previous messages in the conversation</li>
+                        </ul>
+                        <p className="mt-2 text-muted-foreground">
+                          You have been trained on {trainingStats?.messageCount || 0} messages from {trainingStats?.conversationCount || 0} conversations.
+                        </p>
                       </div>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <Textarea
-                        placeholder="Type your message here..."
-                        className="input-terminal flex-1 font-mono text-sm"
-                        disabled={!trainingStats?.isReadyForDeployment}
-                      />
-                      <Button
-                        className="btn-terminal"
-                        disabled={!trainingStats?.isReadyForDeployment}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Send
-                      </Button>
+
+                    {/* Deployment Status */}
+                    <div className="p-4 bg-muted rounded border">
+                      {trainingStats?.isReadyForDeployment ? (
+                        <div className="text-center py-6">
+                          <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                          <p className="font-mono font-semibold mb-2">Ready for Deployment!</p>
+                          <p className="font-mono text-sm text-muted-foreground mb-4">
+                            Your OSS model is trained and ready to be deployed.
+                          </p>
+                          <Button className="btn-terminal">
+                            <Zap className="h-4 w-4 mr-2" />
+                            Deploy Model
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <AlertCircle className="h-12 w-12 mx-auto mb-3 text-yellow-500" />
+                          <p className="font-mono font-semibold mb-2">Training in Progress</p>
+                          <p className="font-mono text-sm text-muted-foreground mb-4">
+                            You need {trainingStats?.remainingMessages || 20} more messages to deploy your model.
+                          </p>
+                          <div className="w-full bg-background rounded-full h-2 mb-4">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min((trainingStats?.progress || 0), 100)}%` }}
+                            ></div>
+                          </div>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {Math.round(trainingStats?.progress || 0)}% Complete
+                          </p>
+                        </div>
+                      )}
                     </div>
                     
                     {trainingStats && (

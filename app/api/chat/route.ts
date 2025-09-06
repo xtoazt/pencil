@@ -10,14 +10,15 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 })
     }
 
     let decoded: { userId: string; email: string }
     try {
       decoded = jwt.verify(token, JWT_SECRET) as { userId: string; email: string }
-    } catch (error) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    } catch (error: any) {
+      console.error("JWT verification failed:", error.message)
+      return NextResponse.json({ error: "Invalid token - Please login again" }, { status: 401 })
     }
 
     const { messages, mode, language, model, width, height, conversationId, saveToHistory = true } = await request.json()
@@ -35,14 +36,20 @@ export async function POST(request: NextRequest) {
 
     // Create conversation if it doesn't exist and we want to save
     if (saveToHistory && !conversationIdToUse) {
-      const sql = getSql()
-      const title = message.length > 50 ? message.substring(0, 50) + "..." : message
-      const result = await sql`
-        INSERT INTO conversations (user_id, title, mode)
-        VALUES (${decoded.userId}, ${title}, ${mode})
-        RETURNING id
-      `
-      conversationIdToUse = result[0].id
+      try {
+        const sql = getSql()
+        const title = message.length > 50 ? message.substring(0, 50) + "..." : message
+        const result = await sql`
+          INSERT INTO conversations (user_id, title, mode)
+          VALUES (${decoded.userId}, ${title}, ${mode})
+          RETURNING id
+        `
+        conversationIdToUse = result[0].id
+      } catch (dbError: any) {
+        console.error("Database error creating conversation:", dbError.message)
+        // Continue without saving to history if database fails
+        conversationIdToUse = null
+      }
     }
 
     switch (mode) {
@@ -177,9 +184,9 @@ export async function POST(request: NextRequest) {
           SET updated_at = NOW() 
           WHERE id = ${conversationIdToUse}
         `
-      } catch (error) {
-        console.error("Error saving messages:", error)
-        // Don't fail the request if saving fails
+      } catch (error: any) {
+        console.error("Error saving messages to database:", error.message)
+        // Don't fail the request if saving fails - just log the error
       }
     }
 
