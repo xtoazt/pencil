@@ -171,6 +171,11 @@ export default function OSSModePage() {
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null)
   const [deploymentLogs, setDeploymentLogs] = useState<string[]>([])
   const [isCreatingDeployment, setIsCreatingDeployment] = useState(false)
+  
+  // Training chat state
+  const [trainingMessages, setTrainingMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
+  const [trainingInput, setTrainingInput] = useState("")
+  const [isTrainingChat, setIsTrainingChat] = useState(false)
 
   // New deployment form state
   const [newDeployment, setNewDeployment] = useState({
@@ -227,6 +232,67 @@ export default function OSSModePage() {
   const handleFetchLogs = async (deploymentId: string) => {
     const logs = await fetchDeploymentLogs(deploymentId)
     setDeploymentLogs(logs)
+  }
+
+  const handleTrainingChat = async () => {
+    if (!trainingInput.trim() || isTrainingChat) return
+
+    const userMessage = { role: 'user' as const, content: trainingInput }
+    setTrainingMessages(prev => [...prev, userMessage])
+    setTrainingInput("")
+    setIsTrainingChat(true)
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [
+            ...trainingMessages.map(msg => ({ role: msg.role, content: msg.content })),
+            { role: "user", content: trainingInput }
+          ],
+          mode: "chat",
+          model: "gpt-4.1-nano",
+          saveToHistory: true
+        }),
+      })
+
+      const data = await response.json()
+      console.log("Training chat response:", data)
+      
+      // Handle different response formats
+      let responseContent = ""
+      if (data.response) {
+        responseContent = data.response
+      } else if (data.content) {
+        responseContent = data.content
+      } else if (data.message) {
+        responseContent = data.message
+      } else if (typeof data === 'string') {
+        responseContent = data
+      } else {
+        responseContent = "I received your message but couldn't generate a proper response. Please try again."
+        console.error("Unexpected response format:", data)
+      }
+      
+      const assistantMessage = { role: 'assistant' as const, content: responseContent }
+      setTrainingMessages(prev => [...prev, assistantMessage])
+      
+      // Refresh training stats after successful chat
+      refreshTrainingStats()
+      
+    } catch (error: any) {
+      console.error("Training chat error:", error)
+      const errorMessage = { 
+        role: 'assistant' as const, 
+        content: `Error: ${error.message || "Failed to send message. Please try again."}` 
+      }
+      setTrainingMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsTrainingChat(false)
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -740,9 +806,9 @@ export default function OSSModePage() {
           <TabsContent value="chat" className="space-y-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-4 font-mono">OSS Mode Chat</h2>
+                <h2 className="text-3xl font-bold mb-4 font-mono">OSS Training & Chat</h2>
                 <p className="text-lg text-muted-foreground font-mono">
-                  Chat with your trained OSS model. Make sure you have at least 20 messages to start chatting.
+                  Train your OSS model by chatting, then deploy it when ready.
                 </p>
               </div>
 
@@ -835,6 +901,87 @@ export default function OSSModePage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Training Chat Interface */}
+              <Card className="card-terminal">
+                <CardHeader className="terminal-header">
+                  <CardTitle className="flex items-center gap-2 font-mono">
+                    <MessageSquare className="h-5 w-5" />
+                    Training Chat
+                  </CardTitle>
+                  <CardDescription className="font-mono text-sm">
+                    Chat to train your OSS model. Each conversation helps improve your deployment.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="terminal-content">
+                  <div className="space-y-4">
+                    {/* Chat Messages */}
+                    <div className="h-64 overflow-y-auto border rounded p-4 bg-background space-y-3">
+                      {trainingMessages.length === 0 ? (
+                        <div className="text-center text-muted-foreground font-mono text-sm">
+                          Start chatting to train your OSS model...
+                        </div>
+                      ) : (
+                        trainingMessages.map((message, index) => (
+                          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] p-3 rounded font-mono text-sm ${
+                              message.role === 'user' 
+                                ? 'bg-primary text-primary-foreground' 
+                                : 'bg-muted'
+                            }`}>
+                              {message.content}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      {isTrainingChat && (
+                        <div className="flex justify-start">
+                          <div className="bg-muted p-3 rounded font-mono text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                              Training...
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="flex gap-2">
+                      <Input
+                        value={trainingInput}
+                        onChange={(e) => setTrainingInput(e.target.value)}
+                        placeholder="Type a message to train your model..."
+                        className="input-terminal font-mono text-sm"
+                        onKeyPress={(e) => e.key === 'Enter' && handleTrainingChat()}
+                        disabled={isTrainingChat}
+                      />
+                      <Button
+                        onClick={handleTrainingChat}
+                        disabled={!trainingInput.trim() || isTrainingChat}
+                        className="btn-terminal"
+                      >
+                        {isTrainingChat ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MessageSquare className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="text-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => setTrainingMessages([])}
+                        className="font-mono text-sm"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear Training Chat
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

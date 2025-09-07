@@ -129,14 +129,31 @@ export default function ChatPage() {
       })
 
       const data = await response.json()
+      console.log("Chat API response:", data)
+      
+      // Handle different response formats
+      let responseContent = ""
       if (data.response) {
+        responseContent = data.response
+      } else if (data.content) {
+        responseContent = data.content
+      } else if (data.message) {
+        responseContent = data.message
+      } else if (typeof data === 'string') {
+        responseContent = data
+      } else {
+        responseContent = "I received your message but couldn't generate a proper response. Please try again."
+        console.error("Unexpected response format:", data)
+      }
+      
+      if (responseContent) {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: data.response,
+          content: responseContent,
           timestamp: new Date(),
-          model: selectedModel,
-          tokens: data.tokens
+          model: data.model || selectedModel,
+          tokens: data.tokens || 0
         }
         setMessages(prev => [...prev, assistantMessage])
         
@@ -144,9 +161,31 @@ export default function ChatPage() {
         if (data.conversationId && !currentConversationId) {
           setCurrentConversationId(data.conversationId)
         }
+      } else {
+        // Add error message if no response content
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Sorry, I couldn't generate a response. Please try again.",
+          timestamp: new Date(),
+          model: selectedModel,
+          tokens: 0
+        }
+        setMessages(prev => [...prev, errorMessage])
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error)
+      
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `Error: ${error.message || "Failed to send message. Please try again."}`,
+        timestamp: new Date(),
+        model: selectedModel,
+        tokens: 0
+      }
+      setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsGenerating(false)
       setIsTyping(false)
