@@ -61,13 +61,13 @@ export async function POST(request: NextRequest) {
           console.warn('AI fallback failed, trying direct LLM7:', error.message)
           try {
             response = await chatCompletion(messages, model)
-          } catch (llm7Error) {
+          } catch (llm7Error: any) {
             console.error('LLM7 also failed:', llm7Error.message)
             // Final fallback response
             response = {
               choices: [{
                 message: {
-                  content: `I received your message: "${message}". I'm experiencing technical difficulties with the AI services. Please try again in a moment.`
+                  content: `I received your message: "${message}". I'm experiencing technical difficulties with the AI services. Please try again in a moment. Error details: ${llm7Error.message}`
                 }
               }],
               model: "fallback",

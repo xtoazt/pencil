@@ -92,10 +92,13 @@ async function callLLM7(messages: ChatMessage[], model: string = "gpt-4.1-nano")
   const startTime = Date.now()
   
   try {
+    console.log('Calling LLM7 with messages:', messages)
     const response = await llm7Chat(messages, model)
     const processingTime = Date.now() - startTime
     
-    if (response.choices && response.choices[0]) {
+    console.log('LLM7 response:', response)
+    
+    if (response.choices && response.choices[0] && response.choices[0].message) {
       markProviderSuccess('llm7')
       return {
         content: response.choices[0].message.content,
@@ -105,10 +108,23 @@ async function callLLM7(messages: ChatMessage[], model: string = "gpt-4.1-nano")
         tokens: response.usage || 0,
         confidence: 0.9
       }
+    } else if (response.content) {
+      // Handle alternative response format
+      markProviderSuccess('llm7')
+      return {
+        content: response.content,
+        model: response.model || model,
+        provider: 'llm7',
+        processingTime,
+        tokens: response.usage || 0,
+        confidence: 0.9
+      }
     } else {
+      console.error('Invalid LLM7 response format:', response)
       throw new Error('Invalid response format from LLM7')
     }
-  } catch (error) {
+  } catch (error: any) {
+    console.error('LLM7 provider error:', error.message)
     markProviderFailed('llm7', error.message)
     throw error
   }

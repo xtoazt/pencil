@@ -433,15 +433,23 @@ export async function chatCompletion(messages: ChatMessage[], model = "gpt-4.1-n
       apiKeyStatus[currentApiKey].lastUsed = Date.now()
     
     // LLM7 uses standard OpenAI format
-    if (data.choices && data.choices[0]) {
+    if (data.choices && data.choices[0] && data.choices[0].message) {
       return {
         choices: [{ message: { content: data.choices[0].message.content } }],
         usage: data.usage?.total_tokens || 0,
         model: llm7Model,
       }
+    } else if (data.content) {
+      // Handle alternative response format
+      return {
+        choices: [{ message: { content: data.content } }],
+        usage: data.usage?.total_tokens || 0,
+        model: llm7Model,
+      }
     } else {
       console.error("Unexpected response format:", data)
-      throw new Error("Unexpected response format from LLM7")
+      console.error("Response keys:", Object.keys(data))
+      throw new Error(`Unexpected response format from LLM7: ${JSON.stringify(data)}`)
     }
   } catch (error) {
     console.error("Chat completion error:", error)
